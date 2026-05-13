@@ -1,0 +1,12 @@
+app.id: ari:cloud:ecosystem::app/ba9fac83-69b2-465e-ac5e-918677c2f572
+spring.jpa.hibernate.ddl-auto: update
+spring.datasource.url: jdbc:hsqldb:file:addon-db # Use a file-based backing store for HSQL
+spring:
+  autoconfigure:
+    exclude:
+      - com.atlassian.connect.spring.internal.AtlassianConnectAutoConfiguration
+addon:
+  key: runtime-bridge-spring-boot-sample-atlaskit
+  base-url: https://vzakharchenko.ngrok.dev
+
+logging.level.com.atlassian.connect.spring: TRACE

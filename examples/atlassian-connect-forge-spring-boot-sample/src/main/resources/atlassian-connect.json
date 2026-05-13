@@ -1,0 +1,32 @@
+{
+  "key": "${addon.key}",
+  "baseUrl": "${addon.base-url}",
+  "name": "Atlassian Connect Spring Boot Sample Atlaskit (Spring Boot)",
+  "authentication": {
+    "type": "jwt"
+  },
+  "lifecycle": {
+    "installed": "/installed",
+    "uninstalled": "/uninstalled"
+  },
+  "modules": {
+    "generalPages": [
+      {
+        "key": "atlaskit-page-jira",
+        "location": "system.top.navigation.bar",
+        "name": {
+          "value": "Atlaskit"
+        },
+        "url": "/atlaskit"
+      },
+      {
+        "key": "atlaskit-page-confluence",
+        "location": "system.header/left",
+        "name": {
+          "value": "Atlaskit"
+        },
+        "url": "/atlaskit"
+      }
+    ]
+  }
+}

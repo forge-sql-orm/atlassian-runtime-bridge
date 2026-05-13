@@ -1,0 +1,30 @@
+{
+  "name": "spring-boot-jake-test",
+  "version": "1.0.0",
+  "description": "spring boot jake test",
+  "main": "index.js",
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "watch": "esbuild src/main/resources/javascript/main.ts --bundle --outfile=target/classes/static/bundle.js --format=iife --platform=browser --target=es2015 --watch --alias:app-transport=./src/main/resources/javascript/connect.ts",
+    "prebuild": "npm install",
+    "build:connect": "esbuild src/main/resources/javascript/main.ts --bundle --outfile=target/classes/static/bundle.js --format=iife --platform=browser --target=es2015 --legal-comments=none --alias:app-transport=./src/main/resources/javascript/connect.ts",
+    "build:forge": "esbuild src/main/resources/javascript/forgeEntry.ts --bundle --outfile=customUI/bundle.js --format=iife --platform=browser --target=es2015 --legal-comments=none --alias:app-transport=./src/main/resources/javascript/forge.ts && shx cp src/main/resources/customUI/index.html customUI/index.html",
+    "build": "npm run build:connect && npm run build:forge"
+  },
+  "author": "",
+  "license": "ISC",
+  "private": true,
+  "dependencies": {
+    "@forge/bridge": "^5.16.0",
+    "react": "18.3.1",
+    "react-dom": "18.3.1",
+    "styled-components": "6.4.1"
+  },
+  "devDependencies": {
+    "@types/react": "18.3.1",
+    "@types/react-dom": "18.3.1",
+    "esbuild": "^0.28.0",
+    "shx": "^0.4.0",
+    "typescript": "^6.0.3"
+  }
+}

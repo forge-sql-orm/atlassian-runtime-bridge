@@ -1,0 +1,55 @@
+app:
+  id: ari:cloud:ecosystem::app/ba9fac83-69b2-465e-ac5e-918677c2f572
+  connect:
+    key: runtime-bridge-spring-boot-sample-atlaskit
+    remote: connect
+    authentication: jwt
+  runtime:
+    name: nodejs24.x
+remotes:
+  - key: connect
+    baseUrl: https://vzakharchenko.ngrok.dev
+    operations:
+      - storage
+      - compute
+      - fetch
+    storage:
+      inScopeEUD: true
+connectModules:
+  jira:lifecycle:
+    - key: lifecycle-events
+      installed: /installed
+      uninstalled: /uninstalled
+  jira:generalPages:
+    - key: atlaskit-page-jira
+      location: system.top.navigation.bar
+      name:
+        value: Atlaskit
+      url: /atlaskit
+modules:
+  jira:globalPage:
+    - key: atlaskit-page-jira-remote
+      resource: main
+      resolver:
+        endpoint: forge-remote
+      layout: blank
+      title: Atlaskit (Forge)
+  endpoint:
+    - key: forge-remote
+      remote: connect
+      route:
+        path: /
+      auth:
+        appUserToken:
+          enabled: true
+        appSystemToken:
+          enabled: true
+resources:
+  - key: main
+    path: ./customUI
+permissions:
+  scopes:
+    act-as-user:connect-jira:
+      allowImpersonation: false
+    read:connect-jira:
+      allowImpersonation: false
