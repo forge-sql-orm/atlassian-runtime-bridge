@@ -103,3 +103,15 @@ SpotBugs uses **`config/spotbugs/exclude-filter.xml`** for known false positives
 - **Skip temporarily:** `mvn … -Derrorprone.skip=true` (profile **`errorprone-off`**).
 - **JDK module flags** for the build JVM live in **`.mvn/jvm.config`**; forked `javac` also gets the `-J--add-exports` / `-J--add-opens` flags from **`maven-compiler-plugin`** (see [Error Prone Maven install](https://errorprone.info/docs/installation#maven)).
 - Version: **`error-prone.version`** in the root `pom.xml` (currently aligned with `error_prone_core` on Maven Central).
+
+### Git pre-commit hook
+
+Hooks live in **`.githooks/`** (tracked in git). **`pre-commit`** runs **`mvn spotless:apply`** then **`mvn verify -DskipTests`** (Spotless, Checkstyle, SpotBugs, PMD, compile with Error Prone).
+
+**Automatic registration:** building from the **repository root** runs **`scripts/install-git-hooks.sh`** on the **`initialize`** phase (via **`exec-maven-plugin`**, `inherited=false`), so a normal **`mvn clean install`** (or any goal that runs `initialize`) sets **`git config core.hooksPath .githooks`** for this clone.
+
+- **Manual install** (same effect): `./scripts/install-git-hooks.sh`
+- **Skip from Maven:** `-DinstallGitHooks.skip=true`
+- **Skip in scripts:** `CI` set (e.g. GitHub Actions), **`GIT_HOOKS_INSTALL=0`**, or not a Git checkout — the script exits without changing Git config.
+- **Bypass hook on commit:** `SKIP_HOOKS=1 git commit …`
+- **Note:** `spotless:apply` can reformat files outside the staged set; review `git status` and re-stage if needed before committing again.

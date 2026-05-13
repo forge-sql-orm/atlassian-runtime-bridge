@@ -43,6 +43,8 @@
         <errorprone.skip>false</errorprone.skip>
         <maven-pmd-plugin.version>3.28.0</maven-pmd-plugin.version>
         <pmd.skip>false</pmd.skip>
+        <installGitHooks.skip>false</installGitHooks.skip>
+        <exec-maven-plugin.version>3.5.0</exec-maven-plugin.version>
     </properties>
     <dependencyManagement>
         <dependencies>
@@ -186,6 +188,32 @@
                 </plugin>
             </plugins>
         </pluginManagement>
+        <plugins>
+            <!-- Runs only on the aggregator POM (inherited=false); wires Git hooks before the build. -->
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>exec-maven-plugin</artifactId>
+                <version>${exec-maven-plugin.version}</version>
+                <inherited>false</inherited>
+                <executions>
+                    <execution>
+                        <id>install-git-hooks</id>
+                        <phase>initialize</phase>
+                        <goals>
+                            <goal>exec</goal>
+                        </goals>
+                        <configuration>
+                            <skip>${installGitHooks.skip}</skip>
+                            <executable>bash</executable>
+                            <workingDirectory>${project.basedir}</workingDirectory>
+                            <arguments>
+                                <argument>${project.basedir}/scripts/install-git-hooks.sh</argument>
+                            </arguments>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
     </build>
     <profiles>
         <profile>
