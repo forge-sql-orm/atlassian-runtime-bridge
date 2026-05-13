@@ -12,32 +12,33 @@ import org.springframework.stereotype.Component;
 
 /**
  * {@link SelfAuthenticationTokenGenerator} override for hybrid Connect + Forge apps.
- * <p>
- * Connect Spring uses self-authentication JWTs for classic iframe / REST calls
- * ({@link AbstractAuthentication} in the security context). Forge requests instead
- * carry invocation tokens; returning an empty string here avoids minting a conflicting
- * self-auth JWT while still delegating to {@code super} for genuine Connect traffic.
- * <p>
- * Requires the Connect Spring Boot 6.x constructor
- * {@code (AddonConfigurationService, AtlassianConnectProperties)} on the base class.
+ *
+ * <p>Connect Spring uses self-authentication JWTs for classic iframe / REST calls ({@link
+ * AbstractAuthentication} in the security context). Forge requests instead carry invocation tokens;
+ * returning an empty string here avoids minting a conflicting self-auth JWT while still delegating
+ * to {@code super} for genuine Connect traffic.
+ *
+ * <p>Requires the Connect Spring Boot 6.x constructor {@code (AddonConfigurationService,
+ * AtlassianConnectProperties)} on the base class.
  */
 @Primary
 @Component
-public class AtlassianForgeSelfAuthenticationTokenGenerator extends SelfAuthenticationTokenGenerator {
+public class AtlassianForgeSelfAuthenticationTokenGenerator
+    extends SelfAuthenticationTokenGenerator {
 
-    public AtlassianForgeSelfAuthenticationTokenGenerator(
-            AddonConfigurationService addonConfigurationService,
-            AtlassianConnectProperties atlassianConnectProperties) {
-        super(addonConfigurationService, atlassianConnectProperties);
-    }
+  public AtlassianForgeSelfAuthenticationTokenGenerator(
+      AddonConfigurationService addonConfigurationService,
+      AtlassianConnectProperties atlassianConnectProperties) {
+    super(addonConfigurationService, atlassianConnectProperties);
+  }
 
-    private boolean isConnectRequest() {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        return authentication instanceof AbstractAuthentication;
-    }
+  private boolean isConnectRequest() {
+    Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+    return authentication instanceof AbstractAuthentication;
+  }
 
-    @Override
-    public String createSelfAuthenticationToken(AtlassianHostUser hostUser) {
-        return isConnectRequest() ? super.createSelfAuthenticationToken(hostUser) : "";
-    }
+  @Override
+  public String createSelfAuthenticationToken(AtlassianHostUser hostUser) {
+    return isConnectRequest() ? super.createSelfAuthenticationToken(hostUser) : "";
+  }
 }

@@ -9,26 +9,33 @@ import org.springframework.boot.web.client.RestTemplateBuilder;
 import org.springframework.web.client.RestTemplate;
 
 /**
- * Forge path for <strong>Jira</strong> REST: uses {@link com.atlassian.connect.spring.AtlassianForgeRestClients}
- * {@code requestJira()} for app and user-scoped clients. Impersonation inherits
- * {@link AbstractProductForgeAdapter#impersonation(AtlassianHostUser)}.
+ * Forge path for <strong>Jira</strong> REST: uses {@link
+ * com.atlassian.connect.spring.AtlassianForgeRestClients} {@code requestJira()} for app and
+ * user-scoped clients. Impersonation inherits {@link
+ * AbstractProductForgeAdapter#impersonation(AtlassianHostUser)}.
  */
-public class JiraProductForgeAdapter extends AbstractProductForgeAdapter implements JiraProductAdapter {
+public class JiraProductForgeAdapter extends AbstractProductForgeAdapter
+    implements JiraProductAdapter {
 
-    public JiraProductForgeAdapter(AtlassianForgeRestClients atlassianForgeRestClients,
-                                   ForgeSecurityContextRetriever forgeSecurityContextRetriever,
-                                   RestTemplateBuilder restTemplateBuilder,
-                                   ImpersonationUserService impersonationUserService) {
-        super(atlassianForgeRestClients, forgeSecurityContextRetriever, restTemplateBuilder, impersonationUserService);
-    }
+  public JiraProductForgeAdapter(
+      AtlassianForgeRestClients atlassianForgeRestClients,
+      ForgeSecurityContextRetriever forgeSecurityContextRetriever,
+      RestTemplateBuilder restTemplateBuilder,
+      ImpersonationUserService impersonationUserService) {
+    super(
+        atlassianForgeRestClients,
+        forgeSecurityContextRetriever,
+        restTemplateBuilder,
+        impersonationUserService);
+  }
 
-    @Override
-    public RestTemplate authenticatedAsAddon(AtlassianHost host) {
-        return asAddon(host).requestJira();
-    }
+  @Override
+  public RestTemplate authenticatedAsAddon(AtlassianHost host) {
+    return asAddon(host).requestJira();
+  }
 
-    @Override
-    public RestTemplate authenticatedAsCurrentUser() {
-        return asCurrentUser().requestJira();
-    }
+  @Override
+  public RestTemplate authenticatedAsCurrentUser() {
+    return asCurrentUser().requestJira();
+  }
 }

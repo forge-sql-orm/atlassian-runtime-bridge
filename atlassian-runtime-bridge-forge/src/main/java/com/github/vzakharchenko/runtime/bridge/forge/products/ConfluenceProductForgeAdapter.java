@@ -9,27 +9,32 @@ import org.springframework.boot.web.client.RestTemplateBuilder;
 import org.springframework.web.client.RestTemplate;
 
 /**
- * Forge path for <strong>Confluence</strong> REST: {@code requestConfluence()} on
- * {@link com.atlassian.connect.spring.AtlassianForgeRestClients}. Impersonation is shared via
- * {@link AbstractProductForgeAdapter}.
+ * Forge path for <strong>Confluence</strong> REST: {@code requestConfluence()} on {@link
+ * com.atlassian.connect.spring.AtlassianForgeRestClients}. Impersonation is shared via {@link
+ * AbstractProductForgeAdapter}.
  */
-public class ConfluenceProductForgeAdapter extends AbstractProductForgeAdapter implements ConfluenceProductAdapter {
+public class ConfluenceProductForgeAdapter extends AbstractProductForgeAdapter
+    implements ConfluenceProductAdapter {
 
+  public ConfluenceProductForgeAdapter(
+      AtlassianForgeRestClients atlassianForgeRestClients,
+      ForgeSecurityContextRetriever forgeSecurityContextRetriever,
+      RestTemplateBuilder restTemplateBuilder,
+      ImpersonationUserService impersonationUserService) {
+    super(
+        atlassianForgeRestClients,
+        forgeSecurityContextRetriever,
+        restTemplateBuilder,
+        impersonationUserService);
+  }
 
-    public ConfluenceProductForgeAdapter(AtlassianForgeRestClients atlassianForgeRestClients,
-                                         ForgeSecurityContextRetriever forgeSecurityContextRetriever,
-                                         RestTemplateBuilder restTemplateBuilder,
-                                         ImpersonationUserService impersonationUserService) {
-        super(atlassianForgeRestClients, forgeSecurityContextRetriever, restTemplateBuilder, impersonationUserService);
-    }
+  @Override
+  public RestTemplate authenticatedAsAddon(AtlassianHost host) {
+    return asAddon(host).requestConfluence();
+  }
 
-    @Override
-    public RestTemplate authenticatedAsAddon(AtlassianHost host) {
-        return asAddon(host).requestConfluence();
-    }
-
-    @Override
-    public RestTemplate authenticatedAsCurrentUser() {
-        return asCurrentUser().requestConfluence();
-    }
+  @Override
+  public RestTemplate authenticatedAsCurrentUser() {
+    return asCurrentUser().requestConfluence();
+  }
 }

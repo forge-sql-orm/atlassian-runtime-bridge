@@ -30,10 +30,19 @@
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-        <maven.compiler.source>21</maven.compiler.source>
-        <maven.compiler.target>21</maven.compiler.target>
+        <java.version>21</java.version>
+        <error-prone.version>2.49.0</error-prone.version>
         <!-- Align all Atlassian Connect Spring Boot artifacts -->
         <atlassian.connect.version>6.0.2</atlassian.connect.version>
+        <maven-checkstyle-plugin.version>3.5.0</maven-checkstyle-plugin.version>
+        <spotless-maven-plugin.version>2.44.5</spotless-maven-plugin.version>
+        <google-java-format.version>1.27.0</google-java-format.version>
+        <spotless.skip>false</spotless.skip>
+        <spotbugs-maven-plugin.version>4.9.8.3</spotbugs-maven-plugin.version>
+        <spotbugs.skip>false</spotbugs.skip>
+        <errorprone.skip>false</errorprone.skip>
+        <maven-pmd-plugin.version>3.28.0</maven-pmd-plugin.version>
+        <pmd.skip>false</pmd.skip>
     </properties>
     <dependencyManagement>
         <dependencies>
@@ -76,7 +85,132 @@
     <build>
         <pluginManagement>
             <plugins>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-compiler-plugin</artifactId>
+                    <configuration>
+                        <fork>true</fork>
+                        <compilerArgs combine.children="append">
+                            <arg>-XDcompilePolicy=simple</arg>
+                            <arg>--should-stop=ifError=FLOW</arg>
+                            <arg>-Xplugin:ErrorProne</arg>
+                            <arg>-XDaddTypeAnnotationsToSymbol=true</arg>
+                            <arg>-J--add-exports=jdk.compiler/com.sun.tools.javac.api=ALL-UNNAMED</arg>
+                            <arg>-J--add-exports=jdk.compiler/com.sun.tools.javac.file=ALL-UNNAMED</arg>
+                            <arg>-J--add-exports=jdk.compiler/com.sun.tools.javac.main=ALL-UNNAMED</arg>
+                            <arg>-J--add-exports=jdk.compiler/com.sun.tools.javac.model=ALL-UNNAMED</arg>
+                            <arg>-J--add-exports=jdk.compiler/com.sun.tools.javac.parser=ALL-UNNAMED</arg>
+                            <arg>-J--add-exports=jdk.compiler/com.sun.tools.javac.processing=ALL-UNNAMED</arg>
+                            <arg>-J--add-exports=jdk.compiler/com.sun.tools.javac.tree=ALL-UNNAMED</arg>
+                            <arg>-J--add-exports=jdk.compiler/com.sun.tools.javac.util=ALL-UNNAMED</arg>
+                            <arg>-J--add-opens=jdk.compiler/com.sun.tools.javac.code=ALL-UNNAMED</arg>
+                            <arg>-J--add-opens=jdk.compiler/com.sun.tools.javac.comp=ALL-UNNAMED</arg>
+                        </compilerArgs>
+                        <annotationProcessorPaths combine.children="append">
+                            <path>
+                                <groupId>com.google.errorprone</groupId>
+                                <artifactId>error_prone_core</artifactId>
+                                <version>${error-prone.version}</version>
+                            </path>
+                        </annotationProcessorPaths>
+                    </configuration>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-checkstyle-plugin</artifactId>
+                    <version>${maven-checkstyle-plugin.version}</version>
+                    <dependencies>
+                        <dependency>
+                            <groupId>com.puppycrawl.tools</groupId>
+                            <artifactId>checkstyle</artifactId>
+                            <version>10.20.2</version>
+                        </dependency>
+                    </dependencies>
+                    <configuration>
+                        <inputEncoding>UTF-8</inputEncoding>
+                        <consoleOutput>true</consoleOutput>
+                        <failsOnError>true</failsOnError>
+                        <includeTestSourceDirectory>true</includeTestSourceDirectory>
+                        <linkXRef>false</linkXRef>
+                    </configuration>
+                </plugin>
+                <plugin>
+                    <groupId>com.diffplug.spotless</groupId>
+                    <artifactId>spotless-maven-plugin</artifactId>
+                    <version>${spotless-maven-plugin.version}</version>
+                    <configuration>
+                        <skip>${spotless.skip}</skip>
+                        <java>
+                            <includes>
+                                <include>src/**/*.java</include>
+                            </includes>
+                            <googleJavaFormat>
+                                <version>${google-java-format.version}</version>
+                                <style>GOOGLE</style>
+                                <reflowLongStrings>false</reflowLongStrings>
+                            </googleJavaFormat>
+                            <removeUnusedImports/>
+                            <trimTrailingWhitespace/>
+                            <endWithNewline/>
+                        </java>
+                    </configuration>
+                </plugin>
+                <plugin>
+                    <groupId>com.github.spotbugs</groupId>
+                    <artifactId>spotbugs-maven-plugin</artifactId>
+                    <version>${spotbugs-maven-plugin.version}</version>
+                    <configuration>
+                        <skip>${spotbugs.skip}</skip>
+                        <effort>Max</effort>
+                        <threshold>Medium</threshold>
+                        <failOnError>true</failOnError>
+                        <jvmArgs>-Duser.language=en</jvmArgs>
+                    </configuration>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-pmd-plugin</artifactId>
+                    <version>${maven-pmd-plugin.version}</version>
+                    <configuration>
+                        <skip>${pmd.skip}</skip>
+                        <targetJdk>21</targetJdk>
+                        <failOnViolation>true</failOnViolation>
+                        <printFailingErrors>true</printFailingErrors>
+                        <includeTests>true</includeTests>
+                        <linkXRef>false</linkXRef>
+                        <rulesets>
+                            <ruleset>category/java/errorprone.xml</ruleset>
+                            <ruleset>category/java/bestpractices.xml</ruleset>
+                        </rulesets>
+                    </configuration>
+                </plugin>
             </plugins>
         </pluginManagement>
     </build>
+    <profiles>
+        <profile>
+            <id>errorprone-off</id>
+            <activation>
+                <property>
+                    <name>errorprone.skip</name>
+                    <value>true</value>
+                </property>
+            </activation>
+            <build>
+                <pluginManagement>
+                    <plugins>
+                        <plugin>
+                            <groupId>org.apache.maven.plugins</groupId>
+                            <artifactId>maven-compiler-plugin</artifactId>
+                            <configuration combine.self="override">
+                                <fork>true</fork>
+                                <release>21</release>
+                                <parameters>true</parameters>
+                            </configuration>
+                        </plugin>
+                    </plugins>
+                </pluginManagement>
+            </build>
+        </profile>
+    </profiles>
 </project>

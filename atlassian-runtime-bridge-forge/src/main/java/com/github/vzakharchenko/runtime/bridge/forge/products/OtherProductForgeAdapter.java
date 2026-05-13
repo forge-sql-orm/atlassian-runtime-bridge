@@ -9,24 +9,30 @@ import org.springframework.boot.web.client.RestTemplateBuilder;
 import org.springframework.web.client.RestTemplate;
 
 /**
- * Forge path for <strong>generic</strong> product REST ({@code request()}), used when the host product
- * is neither Jira nor Confluence or when using the default Forge client surface.
+ * Forge path for <strong>generic</strong> product REST ({@code request()}), used when the host
+ * product is neither Jira nor Confluence or when using the default Forge client surface.
  */
-public class OtherProductForgeAdapter extends AbstractProductForgeAdapter implements OtherProductAdapter {
-    public OtherProductForgeAdapter(AtlassianForgeRestClients atlassianForgeRestClients,
-                                    ForgeSecurityContextRetriever forgeSecurityContextRetriever,
-                                    RestTemplateBuilder restTemplateBuilder,
-                                    ImpersonationUserService impersonationUserService) {
-        super(atlassianForgeRestClients, forgeSecurityContextRetriever, restTemplateBuilder, impersonationUserService);
-    }
+public class OtherProductForgeAdapter extends AbstractProductForgeAdapter
+    implements OtherProductAdapter {
+  public OtherProductForgeAdapter(
+      AtlassianForgeRestClients atlassianForgeRestClients,
+      ForgeSecurityContextRetriever forgeSecurityContextRetriever,
+      RestTemplateBuilder restTemplateBuilder,
+      ImpersonationUserService impersonationUserService) {
+    super(
+        atlassianForgeRestClients,
+        forgeSecurityContextRetriever,
+        restTemplateBuilder,
+        impersonationUserService);
+  }
 
-    @Override
-    public RestTemplate authenticatedAsAddon(AtlassianHost host) {
-        return asAddon(host).request();
-    }
+  @Override
+  public RestTemplate authenticatedAsAddon(AtlassianHost host) {
+    return asAddon(host).request();
+  }
 
-    @Override
-    public RestTemplate authenticatedAsCurrentUser() {
-        return asCurrentUser().request();
-    }
+  @Override
+  public RestTemplate authenticatedAsCurrentUser() {
+    return asCurrentUser().request();
+  }
 }

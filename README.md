@@ -32,7 +32,6 @@ You still need Atlassian Connect Spring Boot starters on the classpath (see the 
 
 ```java
 @SpringBootApplication
-@EnableRetry
 @ComponentScan(basePackageClasses = {
         com.github.vzakharchenko.runtime.bridge.forge.AtlassianConnectForgeAutoConfiguration.class,
         MyApplication.class
@@ -79,10 +78,28 @@ See **[examples/atlassian-connect-forge-spring-boot-sample](examples/atlassian-c
 
 ## Build
 
-From the repository root (requires a JDK matching `maven.compiler.source` / `target` in the root `pom.xml`, currently **25**):
+From the repository root (requires a JDK matching **`java.version`** in the root `pom.xml`, currently **21**):
 
 ```bash
-mvn -DskipTests install
+mvn clean install
 ```
 
 The [sample app](examples/atlassian-connect-forge-spring-boot-sample/) may use a different Java level in its own `pom.xml`.
+
+### Code style
+
+- **Format (Google Java Format + import cleanup):** `mvn spotless:apply`
+- **Check formatting without writing files:** `mvn spotless:check`
+- **`mvn verify`** runs **Spotless** (`spotless:check`), **Checkstyle**, **SpotBugs** (`spotbugs:check`), and **PMD** (`pmd:check`) on each library module.
+
+To skip Spotless temporarily (for example during a large merge): `mvn verify -Dspotless.skip=true`. To skip Checkstyle: `mvn verify -Dcheckstyle.skip=true`. To skip SpotBugs: `mvn verify -Dspotbugs.skip=true`. To skip PMD: `mvn verify -Dpmd.skip=true`.
+
+SpotBugs uses **`config/spotbugs/exclude-filter.xml`** for known false positives (extend with `<Match>` as needed). PMD rules are the built-in **`category/java/errorprone.xml`** and **`category/java/bestpractices.xml`** (see root `pom.xml`); reports: **`target/pmd.xml`** per module.
+
+### Error Prone
+
+[Error Prone](https://errorprone.info/) runs as a **javac plugin** during **`compile`** (so **`mvn clean install`** and **`mvn verify`** both compile sources with checks enabled).
+
+- **Skip temporarily:** `mvn … -Derrorprone.skip=true` (profile **`errorprone-off`**).
+- **JDK module flags** for the build JVM live in **`.mvn/jvm.config`**; forked `javac` also gets the `-J--add-exports` / `-J--add-opens` flags from **`maven-compiler-plugin`** (see [Error Prone Maven install](https://errorprone.info/docs/installation#maven)).
+- Version: **`error-prone.version`** in the root `pom.xml` (currently aligned with `error_prone_core` on Maven Central).

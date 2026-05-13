@@ -19,37 +19,46 @@ import org.springframework.web.client.RestTemplate;
  */
 @Component
 public class OtherProductSelectAdapter implements OtherProductAdapter {
-    private final ConnectProductsAdapter connectProductsAdapter;
-    private final OtherProductForgeAdapter otherProductForgeAdapter;
+  private final ConnectProductsAdapter connectProductsAdapter;
+  private final OtherProductForgeAdapter otherProductForgeAdapter;
 
-    public OtherProductSelectAdapter(AtlassianHostRestClients atlassianHostRestClients,
-                                     AtlassianForgeRestClients atlassianForgeRestClients,
-                                     ForgeSecurityContextRetriever forgeSecurityContextRetriever,
-                                     RestTemplateBuilder restTemplateBuilder,
-                                     ImpersonationUserService impersonationUserService) {
-        this.connectProductsAdapter = new ConnectProductsAdapter(atlassianHostRestClients);
-        this.otherProductForgeAdapter = new OtherProductForgeAdapter(atlassianForgeRestClients,
-                forgeSecurityContextRetriever,
-                restTemplateBuilder,
-                impersonationUserService);
-    }
+  public OtherProductSelectAdapter(
+      AtlassianHostRestClients atlassianHostRestClients,
+      AtlassianForgeRestClients atlassianForgeRestClients,
+      ForgeSecurityContextRetriever forgeSecurityContextRetriever,
+      RestTemplateBuilder restTemplateBuilder,
+      ImpersonationUserService impersonationUserService) {
+    this.connectProductsAdapter = new ConnectProductsAdapter(atlassianHostRestClients);
+    this.otherProductForgeAdapter =
+        new OtherProductForgeAdapter(
+            atlassianForgeRestClients,
+            forgeSecurityContextRetriever,
+            restTemplateBuilder,
+            impersonationUserService);
+  }
 
-    private boolean isForge() {
-        return SecurityContextHolder.getContext().getAuthentication() instanceof ForgeAuthentication;
-    }
+  private boolean isForge() {
+    return SecurityContextHolder.getContext().getAuthentication() instanceof ForgeAuthentication;
+  }
 
-    @Override
-    public RestTemplate authenticatedAsAddon(AtlassianHost host) {
-        return isForge() ? otherProductForgeAdapter.authenticatedAsAddon(host) : connectProductsAdapter.authenticatedAsAddon(host);
-    }
+  @Override
+  public RestTemplate authenticatedAsAddon(AtlassianHost host) {
+    return isForge()
+        ? otherProductForgeAdapter.authenticatedAsAddon(host)
+        : connectProductsAdapter.authenticatedAsAddon(host);
+  }
 
-    @Override
-    public RestTemplate authenticatedAsCurrentUser() {
-        return isForge() ? otherProductForgeAdapter.authenticatedAsCurrentUser() : connectProductsAdapter.authenticatedAsCurrentUser();
-    }
+  @Override
+  public RestTemplate authenticatedAsCurrentUser() {
+    return isForge()
+        ? otherProductForgeAdapter.authenticatedAsCurrentUser()
+        : connectProductsAdapter.authenticatedAsCurrentUser();
+  }
 
-    @Override
-    public RestTemplate impersonation(AtlassianHostUser hostUser) {
-        return isForge() ? otherProductForgeAdapter.impersonation(hostUser) : connectProductsAdapter.impersonation(hostUser);
-    }
+  @Override
+  public RestTemplate impersonation(AtlassianHostUser hostUser) {
+    return isForge()
+        ? otherProductForgeAdapter.impersonation(hostUser)
+        : connectProductsAdapter.impersonation(hostUser);
+  }
 }

@@ -11,18 +11,23 @@ import org.springframework.retry.annotation.EnableRetry;
 import org.springframework.web.client.RestClient;
 
 /**
- * Auto-configuration for the <strong>Connect + Forge hybrid</strong> layout: full Connect
- * {@link AtlassianConnectAutoConfiguration} stays active while this class registers bridge beans
+ * Auto-configuration for the <strong>Connect + Forge hybrid</strong> layout: full Connect {@link
+ * AtlassianConnectAutoConfiguration} stays active while this class registers bridge beans
  * (component scan for {@code com.github.vzakharchenko.runtime.bridge.*}).
- * <p>
- * Declares:
+ *
+ * <p>Declares:
+ *
  * <ul>
- *     <li>{@link AtlassianForgeFilter} — upgrades {@link com.atlassian.connect.spring.internal.auth.frc.ForgeAuthentication}
- *         with a resolved {@link com.atlassian.connect.spring.AtlassianHostUser};</li>
- *     <li>a shared {@link RestClient} pointing at Atlassian GraphQL ({@link #API_ATLASSIAN_COM_GRAPHQL})
- *         for {@link ImpersonationUserServiceImpl} and related Forge flows.</li>
+ *   <li>{@link AtlassianForgeFilter} — upgrades {@link
+ *       com.atlassian.connect.spring.internal.auth.frc.ForgeAuthentication} with a resolved {@link
+ *       com.atlassian.connect.spring.AtlassianHostUser};
+ *   <li>a shared {@link RestClient} pointing at Atlassian GraphQL ({@link
+ *       #API_ATLASSIAN_COM_GRAPHQL}) for {@link ImpersonationUserServiceImpl} and related Forge
+ *       flows.
  * </ul>
- * Filter order uses {@link com.atlassian.connect.spring.internal.AtlassianConnectProperties#getForgeFilterOrder()}.
+ *
+ * Filter order uses {@link
+ * com.atlassian.connect.spring.internal.AtlassianConnectProperties#getForgeFilterOrder()}.
  */
 @Configuration
 @EnableRetry
@@ -32,18 +37,20 @@ import org.springframework.web.client.RestClient;
 @ComponentScan("com.github.vzakharchenko.runtime.bridge.forge")
 public class AtlassianConnectForgeAutoConfiguration {
 
-    public static final String API_ATLASSIAN_COM_GRAPHQL = "https://api.atlassian.com/graphql";
+  public static final String API_ATLASSIAN_COM_GRAPHQL = "https://api.atlassian.com/graphql";
 
-    @Bean
-    public FilterRegistrationBean<AtlassianForgeFilter> pluginForgeFilterRegistrationBean(AtlassianConnectProperties atlassianConnectProperties, AtlassianForgeFilter pluginForgeFilter) {
-        FilterRegistrationBean<AtlassianForgeFilter> registrationBean = new FilterRegistrationBean<>();
-        registrationBean.setFilter(pluginForgeFilter);
-        registrationBean.setOrder(atlassianConnectProperties.getForgeFilterOrder() + 1);
-        return registrationBean;
-    }
+  @Bean
+  public FilterRegistrationBean<AtlassianForgeFilter> pluginForgeFilterRegistrationBean(
+      AtlassianConnectProperties atlassianConnectProperties,
+      AtlassianForgeFilter pluginForgeFilter) {
+    FilterRegistrationBean<AtlassianForgeFilter> registrationBean = new FilterRegistrationBean<>();
+    registrationBean.setFilter(pluginForgeFilter);
+    registrationBean.setOrder(atlassianConnectProperties.getForgeFilterOrder() + 1);
+    return registrationBean;
+  }
 
-    @Bean
-    public RestClient graphqlClient() {
-        return RestClient.create(API_ATLASSIAN_COM_GRAPHQL);
-    }
+  @Bean
+  public RestClient graphqlClient() {
+    return RestClient.create(API_ATLASSIAN_COM_GRAPHQL);
+  }
 }
