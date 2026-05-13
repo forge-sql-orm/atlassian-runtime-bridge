@@ -16,23 +16,24 @@ import org.springframework.web.filter.OncePerRequestFilter;
 import java.io.IOException;
 
 /**
- * Servlet filter that upgrades the current {@link ForgeAuthentication} so that
- * it carries a fully populated {@link com.atlassian.connect.spring.AtlassianHostUser}
- * built from the Forge invocation context.
+ * Servlet filter registered after Forge invocation authentication. When the current
+ * {@link org.springframework.security.core.context.SecurityContext} holds a {@link ForgeAuthentication}
+ * whose principal is not yet a full {@link com.atlassian.connect.spring.AtlassianHostUser}, this filter
+ * replaces it with a new {@link ForgeAuthentication} built from
+ * {@link AtlassianForgeSecurityBridgeService#getAtlassianHostUserFromContext()}.
  * <p>
- * The original {@link ForgeAuthentication} created by Connect only contains raw
- * Forge context details; this filter replaces it with a new instance whose
- * principal is the {@code AtlassianHostUser} resolved by
- * {@link AtlassianForgeMigrationService#getAtlassianHostUserFromContext()}.
+ * Early Forge authentication from Connect Spring carries only invocation metadata; host/user
+ * enrichment runs here so controllers and {@code JiraProductAdapter} see the same model as in
+ * classic Connect requests.
  */
 @Component
 public class AtlassianForgeFilter extends OncePerRequestFilter {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(AtlassianForgeFilter.class);
-    private final AtlassianForgeMigrationService atlassianForgeMigrationService;
+    private final AtlassianForgeSecurityBridgeService forgeSecurityBridgeService;
 
-    public AtlassianForgeFilter(AtlassianForgeMigrationService atlassianForgeMigrationService) {
-        this.atlassianForgeMigrationService = atlassianForgeMigrationService;
+    public AtlassianForgeFilter(AtlassianForgeSecurityBridgeService forgeSecurityBridgeService) {
+        this.forgeSecurityBridgeService = forgeSecurityBridgeService;
     }
 
     @Override
@@ -42,7 +43,7 @@ public class AtlassianForgeFilter extends OncePerRequestFilter {
         var authentication = SecurityContextHolder.getContext().getAuthentication();
         if (authentication instanceof ForgeAuthentication forgeAuthentication) {
             try {
-                atlassianForgeMigrationService.getAtlassianHostUserFromContext()
+                forgeSecurityBridgeService.getAtlassianHostUserFromContext()
                         .ifPresentOrElse(user -> {
                             var ctx = forgeAuthentication.getDetails();
                             var auth = new ForgeAuthentication(ctx, user);

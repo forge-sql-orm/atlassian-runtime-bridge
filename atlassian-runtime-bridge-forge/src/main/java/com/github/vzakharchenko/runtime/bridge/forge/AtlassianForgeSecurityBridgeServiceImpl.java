@@ -2,7 +2,6 @@ package com.github.vzakharchenko.runtime.bridge.forge;
 
 import com.atlassian.connect.spring.*;
 import com.atlassian.connect.spring.internal.auth.frc.ForgeAuthentication;
-import com.atlassian.connect.spring.internal.auth.frc.ForgeRemoteEnforcer;
 import com.atlassian.connect.spring.internal.auth.frc.ForgeSecurityContextRetriever;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -21,17 +20,20 @@ import java.util.Objects;
 import java.util.Optional;
 
 /**
- * Default implementation of {@link AtlassianForgeMigrationService}.
+ * Default {@link AtlassianForgeSecurityBridgeService} implementation.
  * <p>
- * It reconstructs {@link com.atlassian.connect.spring.AtlassianHost} and
- * {@link com.atlassian.connect.spring.AtlassianHostUser} instances from Forge
- * invocation tokens (online and offline), optionally enriching the host
- * via {@link com.github.vzakharchenko.runtime.bridge.common.AtlassianHostContextEnricher},
- * and exposes helpers to obtain Spring Security {@link Authentication} objects.
+ * Resolves {@link com.atlassian.connect.spring.AtlassianHost} from live {@link ForgeApiContext}
+ * (invocation token JSON) or from persisted {@link ForgeSystemAccessToken} rows, optionally passes the
+ * host through {@link com.github.vzakharchenko.runtime.bridge.common.AtlassianHostContextEnricher},
+ * and builds {@link com.atlassian.connect.spring.internal.auth.frc.ForgeAuthentication} backed by
+ * stored offline tokens and optional user impersonation via {@link ImpersonationUserServiceImpl}.
+ * <p>
+ * {@code app.id} ({@link Value}) must match the Forge manifest {@code app.id} so {@link ForgeApp}
+ * metadata lines up with the deployed app.
  */
 @Component
-public class AtlassianForgeMigrationServiceImpl implements AtlassianForgeMigrationService {
-    private static final Logger log = LoggerFactory.getLogger(ForgeRemoteEnforcer.class);
+public class AtlassianForgeSecurityBridgeServiceImpl implements AtlassianForgeSecurityBridgeService {
+    private static final Logger log = LoggerFactory.getLogger(AtlassianForgeSecurityBridgeServiceImpl.class);
 
     private final ForgeSecurityContextRetriever forgeSecurityContextRetriever;
     private final ForgeSystemAccessTokenRepository forgeSystemAccessTokenRepository;
@@ -42,11 +44,11 @@ public class AtlassianForgeMigrationServiceImpl implements AtlassianForgeMigrati
     @Value("${app.id}")
     private String appId;
 
-    public AtlassianForgeMigrationServiceImpl(ForgeSecurityContextRetriever forgeSecurityContextRetriever,
-                                              ForgeSystemAccessTokenRepository forgeSystemAccessTokenRepository,
-                                              ImpersonationUserServiceImpl impersonationUserService,
-                                              Optional<AtlassianHostContextEnricher<ForgeApiContext>> atlassianHostContextEnricher,
-                                              ObjectMapper objectMapper) {
+    public AtlassianForgeSecurityBridgeServiceImpl(ForgeSecurityContextRetriever forgeSecurityContextRetriever,
+                                                   ForgeSystemAccessTokenRepository forgeSystemAccessTokenRepository,
+                                                   ImpersonationUserServiceImpl impersonationUserService,
+                                                   Optional<AtlassianHostContextEnricher<ForgeApiContext>> atlassianHostContextEnricher,
+                                                   ObjectMapper objectMapper) {
         this.forgeSecurityContextRetriever = forgeSecurityContextRetriever;
         this.forgeSystemAccessTokenRepository = forgeSystemAccessTokenRepository;
         this.impersonationUserService = impersonationUserService;
@@ -66,8 +68,7 @@ public class AtlassianForgeMigrationServiceImpl implements AtlassianForgeMigrati
         Optional<AtlassianHost> atlassianHost = atlassianHost(
                 forgeApp.getInstallationId(),
                 ctx.cloudId(),
-                Objects.requireNonNullElse(ctx.clientKey(), ctx.cloudId()),
-                ctx.supportEntitlementNumber()
+                Objects.requireNonNullElse(ctx.clientKey(), ctx.cloudId())
         );
         if (atlassianHostContextEnricher.isPresent()) {
             return atlassianHostContextEnricher.get().update(atlassianHost, forgeApiContext);
@@ -77,39 +78,13 @@ public class AtlassianForgeMigrationServiceImpl implements AtlassianForgeMigrati
 
     private Optional<AtlassianHost> atlassianHost(String installationId,
                                                   String cloudId,
-                                                  String clientKey,
-                                                  String entitlementNumber) {
+                                                  String clientKey) {
         var host = new AtlassianHost();
         host.setAddonInstalled(true);
         host.setInstallationId(installationId);
         host.setCloudId(cloudId);
         host.setClientKey(clientKey);
-        host.setServiceEntitlementNumber(entitlementNumber);
         return Optional.of(host);
-    }
-
-    private Optional<AtlassianHost> fromOfflineToken(Optional<ForgeSystemAccessToken> accessToken, String siteUrl, String cloudId, String clientKey, String entitlementNumber) {
-        if (accessToken.isEmpty()) {
-            return Optional.empty();
-        }
-        var forgeSystemAccessToken = accessToken.get();
-        var maybeCtx = forgeSecurityContextRetriever.getForgeApiContext();
-        if (maybeCtx.isPresent() && isFromContext(forgeSystemAccessToken, maybeCtx.get())) {
-            return fromApiContext(maybeCtx);
-        }
-        log.info("Forge Host from offline token: {}", forgeSystemAccessToken);
-        return atlassianHost(
-                forgeSystemAccessToken.getInstallationId(),
-                cloudId,
-                clientKey,
-                entitlementNumber
-        );
-    }
-
-    private boolean isFromContext(ForgeSystemAccessToken token, ForgeApiContext ctx) {
-        var invocationToken = ctx.getForgeInvocationToken();
-        var app = invocationToken.getApp();
-        return Objects.equals(app.getInstallationId(), token.getInstallationId());
     }
 
     private Optional<AtlassianHostUser> createAtlassianHostUserFromContext(Optional<ForgeApiContext> apiContext) {
@@ -153,7 +128,7 @@ public class AtlassianForgeMigrationServiceImpl implements AtlassianForgeMigrati
 
         var forgeInvocationToken = buildForgeInvocationToken(installationId, host, apiBaseUrl, userId);
         var userToken = userId.map(
-                id -> impersonationUserService.impersonateUser(id, getContextId(apiBaseUrl), offlineToken));
+                id -> impersonationUserService.impersonateUser(id, AtlassianForgeUtils.getContextId(apiBaseUrl), offlineToken));
 
         return new ForgeApiContext(forgeInvocationToken, userToken, Optional.of(offlineToken));
     }
@@ -175,7 +150,7 @@ public class AtlassianForgeMigrationServiceImpl implements AtlassianForgeMigrati
         forgeInvocationToken.setApp(buildForgeApp(installationId, apiBaseUrl));
         userId.ifPresent(forgeInvocationToken::setPrincipal);
         forgeInvocationToken.setContext(objectMapper.convertValue(
-                new InvocationContext(host.getCloudId(), host.getClientKey(), host.getBaseUrl(), host.getEntitlementNumber()),
+                new InvocationContext(host.getCloudId(), host.getClientKey(), host.getBaseUrl()),
                 JsonNode.class
         ));
 
@@ -190,23 +165,8 @@ public class AtlassianForgeMigrationServiceImpl implements AtlassianForgeMigrati
         return app;
     }
 
-    @Override
-    public boolean isMigratedToForge(AtlassianHost atlassianHost) {
-        if (StringUtils.isEmpty(atlassianHost.getInstallationId())) {
-            log.warn("Customer {} doesnt migrate to atlassian forge", atlassianHost.getClientKey());
-            return false;
-        }
-        return true;
-    }
-
     private record InvocationContext(String cloudId,
                                      String clientKey,
-                                     String siteUrl,
-                                     String supportEntitlementNumber) {
-    }
-
-    public String getContextId(String getApiBaseUrl) {
-        String[] parts = getApiBaseUrl.split("/");
-        return "ari:cloud:jira::site/" + parts[parts.length - 1];
+                                     String siteUrl) {
     }
 }

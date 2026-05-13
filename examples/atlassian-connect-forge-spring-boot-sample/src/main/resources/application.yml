@@ -1,12 +1,13 @@
+# Forge app id (manifest app.id) — used by bridge services that read ${app.id}
 app.id: ari:cloud:ecosystem::app/ba9fac83-69b2-465e-ac5e-918677c2f572
+
 spring.jpa.hibernate.ddl-auto: update
-spring.datasource.url: jdbc:hsqldb:file:addon-db # Use a file-based backing store for HSQL
-spring:
-  autoconfigure:
-    exclude:
-      - com.atlassian.connect.spring.internal.AtlassianConnectAutoConfiguration
+# File-backed HSQL for the Connect add-on lifecycle / host tables
+spring.datasource.url: jdbc:hsqldb:file:addon-db
+
 addon:
   key: runtime-bridge-spring-boot-sample-atlaskit
-  base-url: https://vzakharchenko.ngrok.dev
+  # Public URL of this Spring app (ngrok, etc.) — must match Forge remote baseUrl
+  base-url: http://<id>.ngrok.dev
 
 logging.level.com.atlassian.connect.spring: TRACE

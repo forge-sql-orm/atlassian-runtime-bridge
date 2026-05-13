@@ -1,3 +1,7 @@
+# Hybrid Connect + Forge sample manifest.
+# - connect / connectModules: classic Connect lifecycle and UI.
+# - modules: Forge global page (Custom UI) + triggers that call the Spring remote to keep tokens fresh.
+
 app:
   id: ari:cloud:ecosystem::app/ba9fac83-69b2-465e-ac5e-918677c2f572
   connect:
@@ -34,7 +38,20 @@ modules:
         endpoint: forge-remote
       layout: blank
       title: Atlaskit (Forge)
+  # Hourly job: Forge calls remote endpoint system-token-sync -> Spring POST /system/sync (ForgeController).
+  scheduledTrigger:
+    - key: token-sync
+      endpoint: system-token-sync
+      interval: hour
+  # After app install/upgrade: same remote as scheduler so offline token path can run once per event.
+  trigger:
+    - key: event-install
+      endpoint: system-token-sync
+      events:
+        - avi:forge:installed:app
+        - avi:forge:upgraded:app
   endpoint:
+    # Custom UI + user calls: general remote to this Spring app (root path on connect baseUrl).
     - key: forge-remote
       remote: connect
       route:
@@ -42,6 +59,14 @@ modules:
       auth:
         appUserToken:
           enabled: true
+        appSystemToken:
+          enabled: true
+    # Scheduler + event trigger target: POST {baseUrl}/system/sync (see ForgeController).
+    - key: system-token-sync
+      remote: connect
+      route:
+        path: /system/sync
+      auth:
         appSystemToken:
           enabled: true
 resources:
@@ -53,3 +78,11 @@ permissions:
       allowImpersonation: false
     read:connect-jira:
       allowImpersonation: false
+    read:application-role:jira:
+      allowImpersonation: true
+    read:group:jira:
+      allowImpersonation: true
+    read:user:jira:
+      allowImpersonation: true
+    read:avatar:jira:
+      allowImpersonation: true

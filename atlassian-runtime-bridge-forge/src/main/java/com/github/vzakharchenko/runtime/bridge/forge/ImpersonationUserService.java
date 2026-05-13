@@ -1,18 +1,21 @@
 package com.github.vzakharchenko.runtime.bridge.forge;
 
 /**
- * Service for obtaining a user-scoped token by impersonating a user
- * in a given Forge context.
+ * Obtains a <strong>user-scoped</strong> offline auth token for Atlassian product APIs,
+ * given a system-level bearer already issued to the app (Forge offline / system token).
+ * <p>
+ * Implementations typically call Atlassian GraphQL ({@code offlineUserAuthToken}) with the
+ * appropriate product {@code contextIds} (see {@link AtlassianForgeUtils#getContextId(String)}).
  */
 public interface ImpersonationUserService {
 
     /**
-     * Requests an offline user auth token for the given user and context.
+     * Exchanges the system token for a user token via {@code offlineUserAuthToken}.
      *
-     * @param userId    Atlassian account identifier of the user to impersonate
-     * @param contextId Forge context id (for example Jira site ARI)
-     * @param authHeader system-level bearer token used to call Atlassian GraphQL
-     * @return bearer token representing the impersonated user
+     * @param userId     Atlassian account id ({@code ari:cloud:identity::user/...} or bare account id, per API contract)
+     * @param contextId  product context ARI (for example Jira site {@code ari:cloud:jira::site/...})
+     * @param authHeader bearer token for the app installation (passed as {@code Authorization} to GraphQL)
+     * @return bearer token for the impersonated user
      */
     String impersonateUser(String userId, String contextId, String authHeader);
 }

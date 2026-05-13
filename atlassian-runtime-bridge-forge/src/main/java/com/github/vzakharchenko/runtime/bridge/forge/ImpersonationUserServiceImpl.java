@@ -11,9 +11,12 @@ import org.springframework.web.client.RestClientException;
 import java.util.Objects;
 
 /**
- * GraphQL-based {@link ImpersonationUserService} that calls the Atlassian
- * {@code offlineUserAuthToken} mutation to obtain a user-scoped token
- * for a Forge context.
+ * {@link ImpersonationUserService} backed by Spring's {@link HttpSyncGraphQlClient} over the
+ * shared {@link RestClient} bean ({@code graphqlClient} from {@link AtlassianConnectForgeAutoConfiguration}).
+ * <p>
+ * Posts the {@code offlineUserAuthToken} mutation to {@code https://api.atlassian.com/graphql},
+ * validates {@code success} and error payloads, and returns the nested bearer token.
+ * {@link Retryable} replays transient {@link RestClientException}s.
  */
 @Component
 public class ImpersonationUserServiceImpl implements ImpersonationUserService {

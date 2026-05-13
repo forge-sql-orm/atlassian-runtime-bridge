@@ -1,4 +1,8 @@
 <!DOCTYPE html>
+<!--
+  Connect general page: loads Connect all.js, then the esbuild bundle (CSS + JS) for the Atlaskit sample.
+  The iframe root element id must match main.ts (react-container).
+-->
 <html xmlns:th="http://www.thymeleaf.org">
 <head>
     <script th:src="@{${atlassianConnectAllJsUrl}}" type="text/javascript"></script>
@@ -8,3 +12,4 @@
 <body>
     <div id="react-container"></div>
 </body>
+</html>

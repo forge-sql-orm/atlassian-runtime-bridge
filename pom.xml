@@ -30,64 +30,48 @@
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-        <maven.compiler.source>25</maven.compiler.source>
-        <maven.compiler.target>25</maven.compiler.target>
+        <maven.compiler.source>21</maven.compiler.source>
+        <maven.compiler.target>21</maven.compiler.target>
+        <!-- Align all Atlassian Connect Spring Boot artifacts -->
+        <atlassian.connect.version>6.0.2</atlassian.connect.version>
     </properties>
     <dependencyManagement>
-    <dependencies>
-        <dependency>
-            <groupId>com.atlassian.connect</groupId>
-            <artifactId>atlassian-connect-spring-boot-core</artifactId>
-            <version>6.0.2</version>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.springframework</groupId>
-            <artifactId>spring-context-support</artifactId>
-            <version>6.1.18</version>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.springframework</groupId>
-            <artifactId>spring-web</artifactId>
-            <version>6.1.18</version>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.springframework</groupId>
-            <artifactId>spring-web</artifactId>
-            <version>6.1.18</version>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
-            <groupId>com.atlassian.connect</groupId>
-            <artifactId>atlassian-connect-spring-boot-jpa-starter</artifactId>
-            <version>6.0.2</version>
-            <scope>provided</scope>
-            <exclusions>
-                <exclusion>
-                    <groupId>org.liquibase</groupId>
-                    <artifactId>liquibase-core</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>jakarta.transaction</groupId>
-                    <artifactId>jakarta.transaction-api</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>jakarta.persistence</groupId>
-                    <artifactId>jakarta.persistence-api</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>com.querydsl</groupId>
-                    <artifactId>querydsl-apt</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>org.aspectj</groupId>
-                    <artifactId>aspectjweaver</artifactId>
-                </exclusion>
-            </exclusions>
-        </dependency>
-    </dependencies>
+        <dependencies>
+            <dependency>
+                <groupId>com.atlassian.connect</groupId>
+                <artifactId>atlassian-connect-spring-boot-core</artifactId>
+                <version>${atlassian.connect.version}</version>
+                <scope>provided</scope>
+            </dependency>
+            <dependency>
+                <groupId>com.atlassian.connect</groupId>
+                <artifactId>atlassian-connect-spring-boot-jpa-starter</artifactId>
+                <version>${atlassian.connect.version}</version>
+                <scope>provided</scope>
+                <exclusions>
+                    <exclusion>
+                        <groupId>org.liquibase</groupId>
+                        <artifactId>liquibase-core</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>jakarta.transaction</groupId>
+                        <artifactId>jakarta.transaction-api</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>jakarta.persistence</groupId>
+                        <artifactId>jakarta.persistence-api</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>com.querydsl</groupId>
+                        <artifactId>querydsl-apt</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.aspectj</groupId>
+                        <artifactId>aspectjweaver</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
+        </dependencies>
     </dependencyManagement>
     <build>
         <pluginManagement>
