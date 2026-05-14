@@ -1,14 +1,9 @@
-# SonarCloud: add repository secret SONAR_TOKEN.
-# -D sonar.organization / sonar.projectKey: required on the aggregator for CI (e.g. PRs that do not yet
-#   include root pom.xml properties); keep identical to sonar-project.properties and pom.xml.
-# Analysis runs after tests; JaCoCo XML paths are set in the root pom.xml.
+# Static analysis and quality gates on the Java reactor (add steps here as needed; filename stays stable).
+# Today: Maven verify (tests + JaCoCo), SonarCloud, Qlty coverage. Secrets: SONAR_TOKEN, QLTY_COVERAGE_TOKEN.
 #
-# Qlty: add secret QLTY_COVERAGE_TOKEN (project coverage token). Step is skipped when the secret is unset
-# (e.g. forks). JaCoCo XML is uploaded as format jacoco.
-#
-# If the scan fails with "CI analysis while Automatic Analysis is enabled": in SonarCloud open the project →
-# Administration → Analysis Method → disable Automatic Analysis and keep CI-based analysis (this workflow).
-name: SonarCloud
+# Sonar: -D keys must match sonar-project.properties / root pom.xml. If Sonar reports conflict with
+# Automatic Analysis: SonarCloud project → Administration → Analysis Method → use CI only.
+name: Static analysis
 on:
   push:
     branches: [main]
@@ -16,8 +11,8 @@ on:
     types: [opened, synchronize, reopened]
 
 jobs:
-  sonarqube:
-    name: Build and analyze
+  static_analysis:
+    name: Static analysis
     runs-on: ubuntu-latest
     if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
     steps:
@@ -37,7 +32,7 @@ jobs:
           key: ${{ runner.os }}-sonar
           restore-keys: ${{ runner.os }}-sonar
 
-      - name: Verify and SonarCloud scan
+      - name: Maven verify and SonarCloud
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
@@ -46,8 +41,7 @@ jobs:
           -Dsonar.organization=forge-sql-orm
           -Dsonar.projectKey=forge-sql-orm_atlassian-runtime-bridge
 
-      - name: Upload coverage to Qlty
-        if: ${{ secrets.QLTY_COVERAGE_TOKEN != '' }}
+      - name: Upload JaCoCo to Qlty
         uses: qltysh/qlty-action/coverage@v2
         env:
           JACOCO_SOURCE_PATH: atlassian-runtime-bridge-common/src/main/java atlassian-runtime-bridge-forge/src/main/java

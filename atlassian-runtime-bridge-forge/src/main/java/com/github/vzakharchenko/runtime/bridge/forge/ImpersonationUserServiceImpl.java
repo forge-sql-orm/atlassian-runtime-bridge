@@ -47,7 +47,7 @@ public class ImpersonationUserServiceImpl implements ImpersonationUserService {
   public String impersonateUser(String userId, String contextId, String authHeader) {
     var aggGqlClient =
         HttpSyncGraphQlClient.builder(aggRestClient)
-            .headers((headers) -> headers.setBearerAuth(authHeader))
+            .headers(headers -> headers.setBearerAuth(authHeader))
             .build();
 
     String[] contextIds = {contextId};

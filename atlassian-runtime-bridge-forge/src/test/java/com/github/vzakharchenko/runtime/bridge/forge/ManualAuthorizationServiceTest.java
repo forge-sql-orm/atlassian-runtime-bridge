@@ -122,16 +122,17 @@ class ManualAuthorizationServiceTest {
 
     @Test
     void rejectsNullCloudId() {
+      Optional<String> noAccount = Optional.empty();
       assertThatThrownBy(
-              () -> manualAuthorizationService.authorize(null, "installation", Optional.empty()))
+              () -> manualAuthorizationService.authorize(null, "installation", noAccount))
           .as("cloudId is required for manual host materialization")
           .isInstanceOf(NullPointerException.class);
     }
 
     @Test
     void rejectsNullInstallationId() {
-      assertThatThrownBy(
-              () -> manualAuthorizationService.authorize("cloud", null, Optional.empty()))
+      Optional<String> noAccount = Optional.empty();
+      assertThatThrownBy(() -> manualAuthorizationService.authorize("cloud", null, noAccount))
           .as("installationId is required for manual host materialization")
           .isInstanceOf(NullPointerException.class);
     }
