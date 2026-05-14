@@ -1,7 +1,10 @@
 import { HELLO_API_PATH, parseHelloJson, type HelloMessage } from './shared/helloBackend';
 import type { BackendTransport } from './shared/transportContract';
 
-const AP = window.AP;
+/** Atlassian Connect `AP` (injected by all.js); read via `globalThis` for portability. */
+type ConnectHostAp = { context: { getToken(): unknown } };
+
+const AP = (globalThis as typeof globalThis & { AP: ConnectHostAp }).AP;
 
 function apGetToken(): Promise<string> {
     return Promise.resolve(AP.context.getToken()).then(String);
@@ -11,7 +14,7 @@ export async function fetch(path: string): Promise<Response> {
     const mergedHeaders:Record<string, string> = { Accept: 'application/json' };
     return apGetToken().then((token) => {
         mergedHeaders.Authorization = 'JWT ' + token;
-        return window.fetch(path, {
+        return globalThis.fetch(path, {
             credentials: 'include',
             headers: mergedHeaders,
         });

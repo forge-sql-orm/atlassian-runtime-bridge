@@ -26,7 +26,7 @@ public abstract class AbstractProductForgeAdapter {
   private final RestTemplateBuilder restTemplateBuilder;
   private final ImpersonationUserService impersonationUserService;
 
-  public AbstractProductForgeAdapter(
+  protected AbstractProductForgeAdapter(
       AtlassianForgeRestClients atlassianForgeRestClients,
       ForgeSecurityContextRetriever forgeSecurityContextRetriever,
       RestTemplateBuilder restTemplateBuilder,

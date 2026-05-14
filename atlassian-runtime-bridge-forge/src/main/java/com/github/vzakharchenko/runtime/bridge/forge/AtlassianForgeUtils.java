@@ -2,7 +2,9 @@ package com.github.vzakharchenko.runtime.bridge.forge;
 
 /** Small helpers shared by Forge bridge code. */
 public class AtlassianForgeUtils {
-  public AtlassianForgeUtils() {}
+
+  /** Prevents instantiation; only static helpers are used. */
+  private AtlassianForgeUtils() {}
 
   /**
    * Builds a Jira <em>site</em> context id (ARI) from a Forge {@code apiBaseUrl}.
