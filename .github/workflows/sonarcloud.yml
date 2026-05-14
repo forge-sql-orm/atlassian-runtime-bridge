@@ -3,6 +3,9 @@
 #   include root pom.xml properties); keep identical to sonar-project.properties and pom.xml.
 # Analysis runs after tests; JaCoCo XML paths are set in the root pom.xml.
 #
+# Qlty: add secret QLTY_COVERAGE_TOKEN (project coverage token). Step is skipped when the secret is unset
+# (e.g. forks). JaCoCo XML is uploaded as format jacoco.
+#
 # If the scan fails with "CI analysis while Automatic Analysis is enabled": in SonarCloud open the project →
 # Administration → Analysis Method → disable Automatic Analysis and keep CI-based analysis (this workflow).
 name: SonarCloud
@@ -42,3 +45,16 @@ jobs:
           mvn -B verify org.sonarsource.scanner.maven:sonar-maven-plugin:sonar -Psonar
           -Dsonar.organization=forge-sql-orm
           -Dsonar.projectKey=forge-sql-orm_atlassian-runtime-bridge
+
+      - name: Upload coverage to Qlty
+        if: ${{ secrets.QLTY_COVERAGE_TOKEN != '' }}
+        uses: qltysh/qlty-action/coverage@v2
+        env:
+          JACOCO_SOURCE_PATH: atlassian-runtime-bridge-common/src/main/java atlassian-runtime-bridge-forge/src/main/java
+        with:
+          token: ${{ secrets.QLTY_COVERAGE_TOKEN }}
+          format: jacoco
+          skip-missing-files: true
+          files: |
+            atlassian-runtime-bridge-common/target/site/jacoco/jacoco.xml
+            atlassian-runtime-bridge-forge/target/site/jacoco/jacoco.xml
