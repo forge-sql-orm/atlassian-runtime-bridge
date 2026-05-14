@@ -15,10 +15,9 @@ import org.springframework.web.client.RestTemplate;
  *
  * <p>Concrete product adapters ({@link JiraProductForgeAdapter}, {@link
  * ConfluenceProductForgeAdapter}, {@link OtherProductForgeAdapter}) only choose which Forge client
- * method ({@code requestJira()}, {@code requestConfluence()}, {@code request()}) to call for addon
- * and current-user modes.
+ * method ({@code requestJira()}, {@code requestConfluence()}, {@code request()}) to call via {@link
+ * #forgeMethod(ForgeRequestProductMethods)}.
  */
-@SuppressWarnings("PMD.AbstractClassWithoutAbstractMethod")
 public abstract class AbstractProductForgeAdapter {
 
   private final AtlassianForgeRestClients atlassianForgeRestClients;
@@ -37,12 +36,14 @@ public abstract class AbstractProductForgeAdapter {
     this.impersonationUserService = impersonationUserService;
   }
 
-  protected ForgeRequestProductMethods asAddon(AtlassianHost host) {
-    return atlassianForgeRestClients.asApp(host.getInstallationId());
+  protected abstract RestTemplate forgeMethod(ForgeRequestProductMethods methods);
+
+  public RestTemplate authenticatedAsAddon(AtlassianHost host) {
+    return forgeMethod(atlassianForgeRestClients.asApp(host.getInstallationId()));
   }
 
-  protected ForgeRequestProductMethods asCurrentUser() {
-    return atlassianForgeRestClients.asUser();
+  public RestTemplate authenticatedAsCurrentUser() {
+    return forgeMethod(atlassianForgeRestClients.asUser());
   }
 
   public RestTemplate impersonation(AtlassianHostUser hostUser) {
