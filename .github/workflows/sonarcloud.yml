@@ -1,5 +1,10 @@
-# SonarCloud: add repository secret SONAR_TOKEN. sonar.organization and sonar.projectKey are in sonar-project.properties.
+# SonarCloud: add repository secret SONAR_TOKEN.
+# -D sonar.organization / sonar.projectKey: required on the aggregator for CI (e.g. PRs that do not yet
+#   include root pom.xml properties); keep identical to sonar-project.properties and pom.xml.
 # Analysis runs after tests; JaCoCo XML paths are set in the root pom.xml.
+#
+# If the scan fails with "CI analysis while Automatic Analysis is enabled": in SonarCloud open the project →
+# Administration → Analysis Method → disable Automatic Analysis and keep CI-based analysis (this workflow).
 name: SonarCloud
 on:
   push:
@@ -33,4 +38,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-        run: mvn -B verify org.sonarsource.scanner.maven:sonar-maven-plugin:sonar -Psonar
+        run: >
+          mvn -B verify org.sonarsource.scanner.maven:sonar-maven-plugin:sonar -Psonar
+          -Dsonar.organization=forge-sql-orm
+          -Dsonar.projectKey=forge-sql-orm_atlassian-runtime-bridge
