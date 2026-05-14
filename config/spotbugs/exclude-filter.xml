@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  SpotBugs exclude filter (https://spotbugs.readthedocs.io/en/latest/filter.html).
+  EI_EXPOSE_REP2: Spring components hold injected collaborators (repositories, RestClient,
+  ObjectMapper, RestTemplateBuilder) by design; mutability is managed by the framework.
+-->
+<FindBugsFilter>
+    <Match>
+        <Bug pattern="EI_EXPOSE_REP2"/>
+        <Or>
+            <Class name="com.github.vzakharchenko.runtime.bridge.forge.AtlassianForgeSecurityBridgeServiceImpl"/>
+            <Class name="com.github.vzakharchenko.runtime.bridge.forge.ImpersonationUserServiceImpl"/>
+            <Class name="com.github.vzakharchenko.runtime.bridge.forge.products.AbstractProductForgeAdapter"/>
+        </Or>
+    </Match>
+</FindBugsFilter>

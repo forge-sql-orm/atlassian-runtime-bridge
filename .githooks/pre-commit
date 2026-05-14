@@ -1,0 +1,52 @@
+#!/usr/bin/env bash
+# Format, then full Maven build + tests for the reactor (includes verify: JaCoCo check + HTML report),
+# explicit jacoco:report on library modules, then the example app.
+# Install once: ./scripts/install-git-hooks.sh
+# Emergency bypass: SKIP_HOOKS=1 git commit ...
+
+set -euo pipefail
+
+if [[ "${SKIP_HOOKS:-}" == "1" ]]; then
+  echo "pre-commit: SKIP_HOOKS=1 — skipping Maven checks."
+  exit 0
+fi
+
+ROOT="$(git rev-parse --show-toplevel)"
+cd "$ROOT"
+
+if [[ ! -f pom.xml ]]; then
+  exit 0
+fi
+
+if ! command -v mvn >/dev/null 2>&1; then
+  echo "pre-commit: mvn not found in PATH; install Maven or skip with SKIP_HOOKS=1" >&2
+  exit 1
+fi
+
+EXAMPLE_DIR="$ROOT/examples/atlassian-connect-forge-spring-boot-sample"
+if [[ ! -f "$EXAMPLE_DIR/pom.xml" ]]; then
+  echo "pre-commit: example project missing at $EXAMPLE_DIR/pom.xml" >&2
+  exit 1
+fi
+
+echo "pre-commit: mvn spotless:apply"
+mvn -q spotless:apply
+
+echo "pre-commit: mvn clean install (root reactor: tests, verify, JaCoCo)"
+mvn -B clean install
+
+echo "pre-commit: mvn jacoco:report (HTML coverage for common + forge)"
+mvn -B -pl atlassian-runtime-bridge-common,atlassian-runtime-bridge-forge jacoco:report
+
+echo "pre-commit: JaCoCo HTML reports (open in browser):"
+for module_dir in atlassian-runtime-bridge-common atlassian-runtime-bridge-forge; do
+  report="$ROOT/$module_dir/target/site/jacoco/index.html"
+  if [[ -f "$report" ]]; then
+    echo "  file://$report"
+  fi
+done
+
+echo "pre-commit: mvn clean install (example, tests enabled)"
+mvn -B clean install -f "$EXAMPLE_DIR/pom.xml"
+
+echo "pre-commit: OK"

@@ -1,0 +1,43 @@
+<?xml version="1.0"?>
+<!DOCTYPE module PUBLIC
+        "-//Checkstyle//DTD Checkstyle Configuration 1.3//EN"
+        "https://checkstyle.org/dtds/configuration_1_3.dtd">
+<!--
+  Complements Spotless (Google Java Format): layout is enforced by Spotless; Checkstyle adds
+  structural rules that GJF does not cover.
+-->
+<module name="Checker">
+    <property name="charset" value="UTF-8"/>
+    <property name="severity" value="error"/>
+    <property name="fileExtensions" value="java"/>
+
+    <module name="BeforeExecutionExclusionFileFilter">
+        <property name="fileNamePattern" value="module\-info\.java$"/>
+    </module>
+
+    <module name="LineLength">
+        <property name="max" value="120"/>
+        <property name="ignorePattern" value="^ *\* *[^ ]+$|^package |^import |https?://"/>
+    </module>
+
+    <module name="TreeWalker">
+        <module name="UnusedImports"/>
+        <module name="RedundantImport"/>
+        <module name="IllegalImport">
+            <property name="illegalPkgs" value="sun, jdk.internal"/>
+        </module>
+        <module name="NeedBraces"/>
+        <module name="EmptyBlock"/>
+        <module name="LeftCurly"/>
+        <module name="RightCurly"/>
+        <module name="EmptyStatement"/>
+        <module name="OneStatementPerLine"/>
+        <module name="MultipleVariableDeclarations"/>
+        <module name="ArrayTypeStyle"/>
+        <module name="MissingSwitchDefault"/>
+        <module name="FallThrough"/>
+        <module name="UpperEll"/>
+        <module name="ModifierOrder"/>
+        <module name="NoLineWrap"/>
+    </module>
+</module>

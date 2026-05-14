@@ -106,7 +106,7 @@ SpotBugs uses **`config/spotbugs/exclude-filter.xml`** for known false positives
 
 ### Git pre-commit hook
 
-Hooks live in **`.githooks/`** (tracked in git). **`pre-commit`** runs **`mvn spotless:apply`** then **`mvn verify -DskipTests`** (Spotless, Checkstyle, SpotBugs, PMD, compile with Error Prone).
+Hooks live in **`.githooks/`** (tracked in git). **`pre-commit`** runs **`mvn spotless:apply`**, then **`mvn clean install`** at the repository root (full reactor, **tests on**, **`verify`** including **JaCoCo** check and report), then **`mvn jacoco:report`** for **`atlassian-runtime-bridge-common`** and **`atlassian-runtime-bridge-forge`** (refreshes HTML under each module’s **`target/site/jacoco/`**), prints **`file://…/target/site/jacoco/index.html`** paths, then **`mvn clean install`** for **`examples/atlassian-connect-forge-spring-boot-sample`** (example build and tests).
 
 **Automatic registration:** building from the **repository root** runs **`scripts/install-git-hooks.sh`** on the **`initialize`** phase (via **`exec-maven-plugin`**, `inherited=false`), so a normal **`mvn clean install`** (or any goal that runs `initialize`) sets **`git config core.hooksPath .githooks`** for this clone.
 

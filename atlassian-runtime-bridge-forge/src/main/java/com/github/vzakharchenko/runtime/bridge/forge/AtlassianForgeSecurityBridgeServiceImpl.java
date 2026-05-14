@@ -11,8 +11,6 @@ import java.sql.Timestamp;
 import java.time.Instant;
 import java.util.Objects;
 import java.util.Optional;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.Authentication;
@@ -26,7 +24,7 @@ import org.springframework.stereotype.Component;
  * the host through {@link
  * com.github.vzakharchenko.runtime.bridge.common.AtlassianHostContextEnricher}, and builds {@link
  * com.atlassian.connect.spring.internal.auth.frc.ForgeAuthentication} backed by stored offline
- * tokens and optional user impersonation via {@link ImpersonationUserServiceImpl}.
+ * tokens and optional user impersonation via {@link ImpersonationUserService}.
  *
  * <p>{@code app.id} ({@link Value}) must match the Forge manifest {@code app.id} so {@link
  * ForgeApp} metadata lines up with the deployed app.
@@ -34,12 +32,10 @@ import org.springframework.stereotype.Component;
 @Component
 public class AtlassianForgeSecurityBridgeServiceImpl
     implements AtlassianForgeSecurityBridgeService {
-  private static final Logger log =
-      LoggerFactory.getLogger(AtlassianForgeSecurityBridgeServiceImpl.class);
 
   private final ForgeSecurityContextRetriever forgeSecurityContextRetriever;
   private final ForgeSystemAccessTokenRepository forgeSystemAccessTokenRepository;
-  private final ImpersonationUserServiceImpl impersonationUserService;
+  private final ImpersonationUserService impersonationUserService;
   private final Optional<AtlassianHostContextEnricher<ForgeApiContext>>
       atlassianHostContextEnricher;
   private final ObjectMapper objectMapper;
@@ -50,7 +46,7 @@ public class AtlassianForgeSecurityBridgeServiceImpl
   public AtlassianForgeSecurityBridgeServiceImpl(
       ForgeSecurityContextRetriever forgeSecurityContextRetriever,
       ForgeSystemAccessTokenRepository forgeSystemAccessTokenRepository,
-      ImpersonationUserServiceImpl impersonationUserService,
+      ImpersonationUserService impersonationUserService,
       Optional<AtlassianHostContextEnricher<ForgeApiContext>> atlassianHostContextEnricher,
       ObjectMapper objectMapper) {
     this.forgeSecurityContextRetriever = forgeSecurityContextRetriever;
