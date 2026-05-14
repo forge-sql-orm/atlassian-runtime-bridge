@@ -52,6 +52,9 @@
         <sonar.host.url>https://sonarcloud.io</sonar.host.url>
         <!-- Wildcard: modules without tests may have no report; Sonar picks existing files. -->
         <sonar.coverage.jacoco.xmlReportPaths>${maven.multiModuleProjectDirectory}/*/target/site/jacoco/jacoco.xml</sonar.coverage.jacoco.xmlReportPaths>
+        <!-- SonarCloud: reactor analysis does not reliably read sonar-project.properties for mandatory keys; keep in sync with that file. -->
+        <sonar.organization>forge-sql-orm</sonar.organization>
+        <sonar.projectKey>forge-sql-orm_atlassian-runtime-bridge</sonar.projectKey>
     </properties>
     <dependencyManagement>
         <dependencies>

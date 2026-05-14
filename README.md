@@ -4,6 +4,11 @@ Spring Boot helpers for **hybrid Atlassian Connect + Forge** add-ons: one codeba
 
 Built against **Atlassian Connect Spring Boot 6.x** and **Spring Boot 3.4.x** (see the root `pom.xml`).
 
+[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=forge-sql-orm_atlassian-runtime-bridge&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=forge-sql-orm_atlassian-runtime-bridge)
+[![Bugs](https://sonarcloud.io/api/project_badges/measure?project=forge-sql-orm_atlassian-runtime-bridge&metric=bugs)](https://sonarcloud.io/summary/new_code?id=forge-sql-orm_atlassian-runtime-bridge)
+[![Code Smells](https://sonarcloud.io/api/project_badges/measure?project=forge-sql-orm_atlassian-runtime-bridge&metric=code_smells)](https://sonarcloud.io/summary/new_code?id=forge-sql-orm_atlassian-runtime-bridge)
+[![Coverage](https://sonarcloud.io/api/project_badges/measure?project=forge-sql-orm_atlassian-runtime-bridge&metric=coverage)](https://sonarcloud.io/summary/new_code?id=forge-sql-orm_atlassian-runtime-bridge)
+
 ## Modules
 
 | Artifact | Role |
