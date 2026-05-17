@@ -15,8 +15,8 @@
     </parent>
 
     <modules>
-        <module>atlassian-runtime-bridge-common</module>
-        <module>atlassian-runtime-bridge-forge</module>
+        <module>bridge-common</module>
+        <module>bridge-forge-connect</module>
     </modules>
 
     <developers>

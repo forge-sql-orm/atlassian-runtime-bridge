@@ -13,17 +13,17 @@ Built against **Atlassian Connect Spring Boot 6.x** and **Spring Boot 3.4.x** (s
 
 | Artifact | Role |
 |----------|------|
-| **`atlassian-runtime-bridge-common`** | Small, dependency-light API surface: product-scoped HTTP entry points (`JiraProductAdapter`, `ConfluenceProductAdapter`, `OtherProductAdapter`) and `AtlassianHostContextEnricher` for enriching `AtlassianHost` built from Forge context. |
-| **`atlassian-runtime-bridge-forge`** | Depends on `common`. Registers Forge-oriented beans: security bridge, servlet filter, GraphQL impersonation, Connect-vs-Forge **select** adapters, optional JPA lookup by `installationId`, and related utilities. |
+| **`bridge-common`** | Small, dependency-light API surface: product-scoped HTTP entry points (`JiraProductAdapter`, `ConfluenceProductAdapter`, `OtherProductAdapter`) and `AtlassianHostContextEnricher` for enriching `AtlassianHost` built from Forge context. |
+| **`bridge-forge-connect`** | Depends on `bridge-common`. Registers Forge-oriented beans: security bridge, servlet filter, GraphQL impersonation, Connect-vs-Forge **select** adapters, optional JPA lookup by `installationId`, and related utilities. |
 
-Application code should depend only on **`atlassian-runtime-bridge-forge`** (it pulls `common` transitively).
+Application code should depend only on **`bridge-forge-connect`** (it pulls `bridge-common` transitively).
 
 ## Maven coordinates
 
 ```xml
 <dependency>
     <groupId>com.github.vzakharchenko</groupId>
-    <artifactId>atlassian-runtime-bridge-forge</artifactId>
+    <artifactId>bridge-forge-connect</artifactId>
     <version>1.0-SNAPSHOT</version>
 </dependency>
 ```
@@ -217,7 +217,7 @@ SpotBugs uses **`config/spotbugs/exclude-filter.xml`** for known false positives
 
 ### Git pre-commit hook
 
-Hooks live in **`.githooks/`** (tracked in git). **`pre-commit`** runs **`mvn spotless:apply`**, then **`mvn clean install`** at the repository root (full reactor, **tests on**, **`verify`** including **JaCoCo** check and report), then **`mvn jacoco:report`** for **`atlassian-runtime-bridge-common`** and **`atlassian-runtime-bridge-forge`** (refreshes HTML under each module’s **`target/site/jacoco/`**), prints **`file://…/target/site/jacoco/index.html`** paths, then **`mvn clean install`** for **`examples/atlassian-connect-forge-spring-boot-sample`** (example build and tests).
+Hooks live in **`.githooks/`** (tracked in git). **`pre-commit`** runs **`mvn spotless:apply`**, then **`mvn clean install`** at the repository root (full reactor, **tests on**, **`verify`** including **JaCoCo** check and report), then **`mvn jacoco:report`** for **`bridge-common`** and **`bridge-forge-connect`** (refreshes HTML under each module’s **`target/site/jacoco/`**), prints **`file://…/target/site/jacoco/index.html`** paths, then **`mvn clean install`** for **`examples/atlassian-connect-forge-spring-boot-sample`** (example build and tests).
 
 **Automatic registration:** building from the **repository root** runs **`scripts/install-git-hooks.sh`** on the **`initialize`** phase (via **`exec-maven-plugin`**, `inherited=false`), so a normal **`mvn clean install`** (or any goal that runs `initialize`) sets **`git config core.hooksPath .githooks`** for this clone.
 

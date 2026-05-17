@@ -26,7 +26,7 @@
     <dependencies>
         <dependency>
             <groupId>com.github.vzakharchenko</groupId>
-            <artifactId>atlassian-runtime-bridge-forge</artifactId>
+            <artifactId>bridge-forge-connect</artifactId>
             <version>${atlassian-runtime-bridge.version}</version>
         </dependency>
         <dependency>

@@ -36,10 +36,10 @@ echo "pre-commit: mvn clean install (root reactor: tests, verify, JaCoCo)"
 mvn -B clean install
 
 echo "pre-commit: mvn jacoco:report (HTML coverage for common + forge)"
-mvn -B -pl atlassian-runtime-bridge-common,atlassian-runtime-bridge-forge jacoco:report
+mvn -B -pl bridge-common,bridge-forge-connect jacoco:report
 
 echo "pre-commit: JaCoCo HTML reports (open in browser):"
-for module_dir in atlassian-runtime-bridge-common atlassian-runtime-bridge-forge; do
+for module_dir in bridge-common bridge-forge-connect; do
   report="$ROOT/$module_dir/target/site/jacoco/index.html"
   if [[ -f "$report" ]]; then
     echo "  file://$report"
