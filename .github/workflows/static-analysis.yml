@@ -26,6 +26,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          persist-credentials: false   # checkout does not write GITHUB_TOKEN to .git/config
 
       - uses: actions/setup-java@v4
         with:
