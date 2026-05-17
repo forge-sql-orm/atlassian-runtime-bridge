@@ -10,10 +10,17 @@ on:
   pull_request:
     types: [opened, synchronize, reopened]
 
+# Default-deny at the workflow level; each job grants exactly what it needs.
+permissions: {}
+
 jobs:
   static_analysis:
     name: Static analysis
     runs-on: ubuntu-latest
+    permissions:
+      contents: read           # actions/checkout
+      pull-requests: write     # SonarCloud PR decoration / inline comments
+      checks: write            # SonarCloud check status posted via GITHUB_TOKEN
     if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
     steps:
       - uses: actions/checkout@v4
