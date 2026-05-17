@@ -13,8 +13,8 @@ Built against **Atlassian Connect Spring Boot 6.x** and **Spring Boot 3.4.x** (s
 
 | Artifact | Role |
 |----------|------|
-| **`atlassian-runtime-bridge-common`** | Small, dependency-light API surface: product-scoped HTTP entry points (`JiraProductAdapter`, `ConfluenceProductAdapter`, `OtherProductAdapter`) and optional `AtlassianHostContextEnricher` for enriching `AtlassianHost` built from Forge context. |
-| **`atlassian-runtime-bridge-forge`** | Depends on `common`. Registers Forge-oriented beans: security bridge, servlet filter, GraphQL impersonation, Connect-vs-Forge **select** adapters, and related utilities. |
+| **`atlassian-runtime-bridge-common`** | Small, dependency-light API surface: product-scoped HTTP entry points (`JiraProductAdapter`, `ConfluenceProductAdapter`, `OtherProductAdapter`) and `AtlassianHostContextEnricher` for enriching `AtlassianHost` built from Forge context. |
+| **`atlassian-runtime-bridge-forge`** | Depends on `common`. Registers Forge-oriented beans: security bridge, servlet filter, GraphQL impersonation, Connect-vs-Forge **select** adapters, optional JPA lookup by `installationId`, and related utilities. |
 
 Application code should depend only on **`atlassian-runtime-bridge-forge`** (it pulls `common` transitively).
 
@@ -28,7 +28,7 @@ Application code should depend only on **`atlassian-runtime-bridge-forge`** (it 
 </dependency>
 ```
 
-You still need Atlassian Connect Spring Boot starters on the classpath (see the [sample](examples/atlassian-connect-forge-spring-boot-sample/) `pom.xml`).
+You still need Atlassian Connect Spring Boot starters on the classpath (see the [sample](examples/atlassian-connect-forge-spring-boot-sample/) `pom.xml`). For **Connect-persisted host rows** (shared secret, `baseUrl`, entitlements, etc.) add **`atlassian-connect-spring-boot-jpa-starter`** and a datasource — the bridge registers an extra repository only when Connect’s JPA auto-configuration is present (see [Connect host persistence](#connect-host-persistence-jpa)).
 
 ## Enabling the bridge in your Spring Boot app
 
@@ -46,10 +46,19 @@ public class MyApplication { /* ... */ }
 
 3. Set **`app.id`** to your Forge manifest `app.id` (used when reconstructing `ForgeApp` metadata in `AtlassianForgeSecurityBridgeServiceImpl`).
 
-`AtlassianConnectForgeAutoConfiguration` keeps the stock Connect auto-configuration and adds:
+**`AtlassianConnectForgeAutoConfiguration`** keeps the stock Connect auto-configuration and adds:
 
 - **`AtlassianForgeFilter`** — runs after Forge auth and replaces `ForgeAuthentication` with one backed by a resolved `AtlassianHostUser` when possible.
 - **`graphqlClient`** — shared `RestClient` for `https://api.atlassian.com/graphql` (offline user token / impersonation).
+
+Component scan on `com.github.vzakharchenko.runtime.bridge.forge` also picks up **`AtlassianConnectForgeJpaAutoConfiguration`** when Connect’s JPA starter is on the classpath (separate class; see below).
+
+### Configuration classes
+
+| Class | When active | Role |
+|-------|-------------|------|
+| **`AtlassianConnectForgeAutoConfiguration`** | Always (once component-scanned) | Filter, GraphQL `RestClient`, bridge component scan. |
+| **`AtlassianConnectForgeJpaAutoConfiguration`** | Only if `com.atlassian.connect.spring.internal.jpa.AtlassianJpaAutoConfiguration` is on the classpath (Connect JPA starter) | Adds **`AtlassianHostByInstallationIdRepository`** via `@EnableJpaRepositories` **after** Connect’s own JPA config — no `@Primary`, no changes to `AtlassianHostRepository`. |
 
 ## Calling Jira, Confluence, or generic product REST
 
@@ -73,9 +82,106 @@ Typical pattern: run work on a thread with a clean or known context, call `autho
 - `authorize(AtlassianHostUser)` / `authorize(AtlassianHost)` when you already have full host objects.
 - `authorize(String cloudId, String installationId, Optional<String> accountId)` for a **minimal** host built from ids (non-null `cloudId` / `installationId`; optional non-blank account id for user-scoped REST). Populate extra host fields yourself if a given API needs them.
 
-## Optional host enrichment
+## Host enrichment from Forge context
 
-Implement **`AtlassianHostContextEnricher`** with context type **`ForgeApiContext`** (from Atlassian Connect Spring) if the default host built from Forge context is missing fields your code needs (`baseUrl`, `clientKey`, entitlement number, flags, etc.). The bridge invokes it when resolving hosts from live Forge API context.
+When resolving an `AtlassianHost` from a live **`ForgeApiContext`**, **`AtlassianForgeSecurityBridgeServiceImpl`** builds a **minimal** host (`installationId`, `cloudId`, `clientKey`, `addonInstalled`) from the Forge invocation token, then runs every registered **`AtlassianHostContextEnricher<ForgeApiContext>`** in ascending **`order()`** (lower runs first).
+
+### Built-in: Connect row by `installationId`
+
+If you use Connect’s host table (JPA), the forge module registers **`ConnectOnForgeContext`** automatically when Connect’s **`AtlassianJpaAutoConfiguration`** is present. It:
+
+1. Looks up the row with **`AtlassianHostByInstallationIdRepository.findByInstallationId(...)`** (Spring Data derived query; **not** on stock `AtlassianHostRepository`, which is keyed by `clientKey`).
+2. **Merges** the persisted row with the minimal Forge host via **`AtlassianHostMerge`**: Connect columns (`sharedSecret`, `baseUrl`, entitlements, audit fields, …) come from the database; non-null scalar fields from the invocation token overlay the copy (e.g. fresh **`cloudId`**). The JPA entity returned from the repository is **not** mutated.
+
+**`ConnectOnForgeContext.CONNECT_LOOKUP_ORDER`** is `1`, so this enricher runs before custom enrichers that keep the default **`order()`** (`Integer.MAX_VALUE`).
+
+Without JPA / without a matching row, the minimal host is unchanged and the bridge still works for Forge-only flows.
+
+### Custom enrichers
+
+Implement **`AtlassianHostContextEnricher<ForgeApiContext>`** in `common` and register it as a Spring bean if you need more than the Connect table (custom flags, external tenant registry, per-tenant config, etc.). The enricher receives the host produced by the previous step in the chain and returns the next one — so a custom bean can **fully replace** the `AtlassianHost`, copy fields from any source, or attach a richer subclass (see below). Override **`order()`** when your logic must run before or after **`ConnectOnForgeContext`** (which uses `order() = 1`).
+
+```java
+@Component
+public class TenantConfigEnricher implements AtlassianHostContextEnricher<ForgeApiContext> {
+
+  private final TenantConfigRepository tenants;
+
+  public TenantConfigEnricher(TenantConfigRepository tenants) {
+    this.tenants = tenants;
+  }
+
+  @Override
+  public int order() {
+    return 100; // after ConnectOnForgeContext (1), before defaults (Integer.MAX_VALUE)
+  }
+
+  @Override
+  public Optional<AtlassianHost> update(
+      Optional<AtlassianHost> host, Optional<ForgeApiContext> ctx) {
+    return host.map(h -> {
+      h.setBaseUrl(tenants.resolveBaseUrl(h.getInstallationId())); // or build a fresh instance
+      return h;
+    });
+  }
+}
+```
+
+### Extending `AtlassianHost` with your own fields
+
+`com.atlassian.connect.spring.AtlassianHost` is **not `final`** — you can subclass it and carry extra state (feature flags, tenant tier, cached entitlement details, etc.) through the same `AtlassianHostUser` / security context the bridge already propagates. Return your subclass from an enricher and downstream code (product adapters, custom `@Service` beans) can cast or call typed helpers on it:
+
+```java
+public class TenantAwareHost extends AtlassianHost {
+  private String tier;          // e.g. "free" / "standard" / "premium"
+  private Set<String> features; // tenant-level feature toggles
+
+  public String getTier()              { return tier; }
+  public void setTier(String tier)     { this.tier = tier; }
+  public Set<String> getFeatures()     { return features; }
+  public void setFeatures(Set<String> f) { this.features = f; }
+}
+
+@Component
+public class TenantAwareHostEnricher implements AtlassianHostContextEnricher<ForgeApiContext> {
+
+  @Override
+  public Optional<AtlassianHost> update(
+      Optional<AtlassianHost> host, Optional<ForgeApiContext> ctx) {
+    return host.map(base -> {
+      TenantAwareHost enriched = new TenantAwareHost();
+      // copy whatever Connect / ConnectOnForgeContext already filled in:
+      enriched.setClientKey(base.getClientKey());
+      enriched.setInstallationId(base.getInstallationId());
+      enriched.setCloudId(base.getCloudId());
+      enriched.setBaseUrl(base.getBaseUrl());
+      enriched.setSharedSecret(base.getSharedSecret());
+      // add your own:
+      enriched.setTier(lookupTier(base.getInstallationId()));
+      enriched.setFeatures(lookupFeatures(base.getInstallationId()));
+      return enriched;
+    });
+  }
+}
+```
+
+Notes when subclassing:
+
+- **Don't mutate JPA-managed instances.** `ConnectOnForgeContext` already guards against this via `AtlassianHostMerge`; if your enricher receives a host that came from `AtlassianHostRepository`, build a new object instead of calling setters on the input.
+- **Persisting your subclass is your responsibility.** Connect Spring's `AtlassianHostRepository` stores the base `AtlassianHost` columns only — extra fields on your subclass live in memory unless you persist them yourself (separate table, your own JPA entity, cache, etc.).
+- **Downstream code reaches your fields via `(TenantAwareHost) hostUser.getHost()`** (or an `instanceof` pattern). The bridge's select adapters do not care about the concrete type — they only read the standard Connect fields.
+
+## Connect host persistence (JPA)
+
+Connect’s **`AtlassianJpaAutoConfiguration`** already enables **`AtlassianHostRepository`**, **`AtlassianHostMappingRepository`**, and **`ForgeSystemAccessTokenRepository`**.
+
+The bridge adds a **separate** repository interface:
+
+- **`AtlassianHostByInstallationIdRepository`** — `Optional<AtlassianHost> findByInstallationId(String installationId)`
+
+It is enabled by **`AtlassianConnectForgeJpaAutoConfiguration`**, which is conditional on the Connect JPA auto-configuration class name (string-based `@ConditionalOnClass` / `@AutoConfigureAfter`, so the bridge JAR does not require that class at compile time for consumers that omit JPA).
+
+**`ConnectOnForgeContext`** injects `Optional<AtlassianHostByInstallationIdRepository>`: if the bean is absent, enrichment from the host table is skipped.
 
 ## Example project
 
