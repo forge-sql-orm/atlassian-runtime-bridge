@@ -9,8 +9,7 @@ import com.github.vzakharchenko.runtime.bridge.common.AtlassianHostContextEnrich
 import io.micrometer.common.util.StringUtils;
 import java.sql.Timestamp;
 import java.time.Instant;
-import java.util.Objects;
-import java.util.Optional;
+import java.util.*;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.Authentication;
@@ -36,8 +35,7 @@ public class AtlassianForgeSecurityBridgeServiceImpl
   private final ForgeSecurityContextRetriever forgeSecurityContextRetriever;
   private final ForgeSystemAccessTokenRepository forgeSystemAccessTokenRepository;
   private final ImpersonationUserService impersonationUserService;
-  private final Optional<AtlassianHostContextEnricher<ForgeApiContext>>
-      atlassianHostContextEnricher;
+  private final List<AtlassianHostContextEnricher<ForgeApiContext>> atlassianHostContextEnrichers;
   private final ObjectMapper objectMapper;
 
   @Value("${app.id}")
@@ -47,13 +45,21 @@ public class AtlassianForgeSecurityBridgeServiceImpl
       ForgeSecurityContextRetriever forgeSecurityContextRetriever,
       ForgeSystemAccessTokenRepository forgeSystemAccessTokenRepository,
       ImpersonationUserService impersonationUserService,
-      Optional<AtlassianHostContextEnricher<ForgeApiContext>> atlassianHostContextEnricher,
-      ObjectMapper objectMapper) {
+      Optional<List<AtlassianHostContextEnricher<ForgeApiContext>>> atlassianHostContextEnrichers,
+      Optional<ObjectMapper> objectMapper) {
     this.forgeSecurityContextRetriever = forgeSecurityContextRetriever;
     this.forgeSystemAccessTokenRepository = forgeSystemAccessTokenRepository;
     this.impersonationUserService = impersonationUserService;
-    this.objectMapper = objectMapper;
-    this.atlassianHostContextEnricher = atlassianHostContextEnricher;
+    this.objectMapper = objectMapper.orElseGet(ObjectMapper::new);
+    this.atlassianHostContextEnrichers =
+        atlassianHostContextEnrichers
+            .map(
+                enrichers -> {
+                  var sorted = new ArrayList<>(enrichers);
+                  sorted.sort(Comparator.comparingInt(AtlassianHostContextEnricher::order));
+                  return List.copyOf(sorted);
+                })
+            .orElseGet(Collections::emptyList);
   }
 
   private Optional<AtlassianHost> fromApiContext(Optional<ForgeApiContext> forgeApiContext) {
@@ -69,15 +75,15 @@ public class AtlassianForgeSecurityBridgeServiceImpl
             InvocationContext.class);
     var forgeApp = invocationToken.getApp();
 
-    Optional<AtlassianHost> atlassianHost =
+    Optional<AtlassianHost> host =
         atlassianHost(
             forgeApp.getInstallationId(),
             ctx.cloudId(),
             Objects.requireNonNullElse(ctx.clientKey(), ctx.cloudId()));
-    if (atlassianHostContextEnricher.isPresent()) {
-      return atlassianHostContextEnricher.get().update(atlassianHost, forgeApiContext);
+    for (AtlassianHostContextEnricher<ForgeApiContext> enricher : atlassianHostContextEnrichers) {
+      host = enricher.update(host, forgeApiContext);
     }
-    return atlassianHost;
+    return host;
   }
 
   private Optional<AtlassianHost> atlassianHost(

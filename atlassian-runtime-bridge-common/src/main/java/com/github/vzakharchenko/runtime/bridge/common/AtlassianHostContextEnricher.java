@@ -16,5 +16,14 @@ import java.util.Optional;
  */
 @FunctionalInterface
 public interface AtlassianHostContextEnricher<T> {
+
+  /**
+   * Lower values run first when multiple enrichers are registered (see {@code
+   * AtlassianForgeSecurityBridgeServiceImpl}).
+   */
+  default int order() {
+    return Integer.MAX_VALUE;
+  }
+
   Optional<AtlassianHost> update(Optional<AtlassianHost> atlassianHost, Optional<T> context);
 }

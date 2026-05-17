@@ -29,3 +29,7 @@ addon-db.log
 addon-db.tmp
 addon-db.properties
 addon-db.script
+
+# Forge / npm sample build artefacts
+node_modules/
+customUI/

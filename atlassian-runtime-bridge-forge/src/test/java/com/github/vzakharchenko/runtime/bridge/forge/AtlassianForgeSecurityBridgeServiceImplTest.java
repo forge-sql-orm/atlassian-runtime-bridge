@@ -90,24 +90,24 @@ class AtlassianForgeSecurityBridgeServiceImplTest {
   }
 
   private AtlassianForgeSecurityBridgeServiceImpl newService(
-      Optional<AtlassianHostContextEnricher<ForgeApiContext>> enricher) {
+      Optional<List<AtlassianHostContextEnricher<ForgeApiContext>>> enrichers) {
     return newService(
-        enricher,
+        enrichers,
         (userId, contextId, authHeader) -> {
           throw new AssertionError("impersonation must not run for this test setup");
         });
   }
 
   private AtlassianForgeSecurityBridgeServiceImpl newService(
-      Optional<AtlassianHostContextEnricher<ForgeApiContext>> enricher,
+      Optional<List<AtlassianHostContextEnricher<ForgeApiContext>>> enrichers,
       ImpersonationUserService impersonationUserService) {
     AtlassianForgeSecurityBridgeServiceImpl impl =
         new AtlassianForgeSecurityBridgeServiceImpl(
             forgeSecurityContextRetriever,
             forgeSystemAccessTokenRepository,
             impersonationUserService,
-            enricher,
-            objectMapper);
+            enrichers,
+            Optional.of(objectMapper));
     ReflectionTestUtils.setField(impl, "appId", "test-forge-app-id");
     return impl;
   }
@@ -210,7 +210,7 @@ class AtlassianForgeSecurityBridgeServiceImplTest {
       when(atlassianHostContextEnricher.update(any(), any())).thenReturn(Optional.of(enriched));
 
       AtlassianForgeSecurityBridgeServiceImpl withEnricher =
-          newService(Optional.of(atlassianHostContextEnricher));
+          newService(Optional.of(List.of(atlassianHostContextEnricher)));
 
       assertThat(
               withEnricher.getAtlassianHostUserFromContext().map(u -> u.getHost().getClientKey()))
