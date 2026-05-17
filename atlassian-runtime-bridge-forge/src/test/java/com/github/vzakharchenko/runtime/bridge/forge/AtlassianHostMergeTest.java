@@ -8,28 +8,28 @@ import org.junit.jupiter.api.Test;
 class AtlassianHostMergeTest {
 
   @Test
-  void merge_keepsSharedSecretFromStoredRow() {
+  void mergeKeepsSharedSecretFromStoredRow() {
     AtlassianHost merged = AtlassianHostMerge.merge(fullStoredRow(), forgeMinimal());
 
     assertThat(merged.getSharedSecret()).isEqualTo("db-secret");
   }
 
   @Test
-  void merge_overlaysCloudIdFromForgeMinimal() {
+  void mergeOverlaysCloudIdFromForgeMinimal() {
     AtlassianHost merged = AtlassianHostMerge.merge(fullStoredRow(), forgeMinimal());
 
     assertThat(merged.getCloudId()).isEqualTo("cloud-from-fit");
   }
 
   @Test
-  void merge_overlaysClientKeyFromForgeMinimal() {
+  void mergeOverlaysClientKeyFromForgeMinimal() {
     AtlassianHost merged = AtlassianHostMerge.merge(fullStoredRow(), forgeMinimal());
 
     assertThat(merged.getClientKey()).isEqualTo("ck-minimal");
   }
 
   @Test
-  void merge_doesNotMutatePersistedInstance() {
+  void mergeDoesNotMutatePersistedInstance() {
     AtlassianHost stored = fullStoredRow();
     String originalCloudId = stored.getCloudId();
 

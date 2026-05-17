@@ -10,6 +10,8 @@ class AtlassianHostContextEnricherTest {
 
   private static final String CLOUD_ID = "cloud-99";
   private static final String INSTALLATION_ID = "inst-99";
+  private static final String CLIENT_KEY_FROM_CONTEXT = "ck-from-ctx";
+  private static final String SITE_BASE_URL = "https://site.example";
 
   @Test
   void passthroughEnricherReturnsSameHostWhenPresent() {
@@ -69,12 +71,13 @@ class AtlassianHostContextEnricherTest {
 
     Optional<AtlassianHost> result =
         enricher.update(
-            Optional.of(seed), Optional.of(new SiteContext("https://site.example", "ck-from-ctx")));
+            Optional.of(seed),
+            Optional.of(new SiteContext(SITE_BASE_URL, CLIENT_KEY_FROM_CONTEXT)));
 
     assertThat(result)
         .map(AtlassianHost::getBaseUrl)
         .as("context-driven enrichment must populate baseUrl")
-        .contains("https://site.example");
+        .contains(SITE_BASE_URL);
   }
 
   @Test
@@ -95,11 +98,11 @@ class AtlassianHostContextEnricherTest {
 
     Optional<AtlassianHost> result =
         enricher.update(
-            Optional.of(seed), Optional.of(new SiteContext("https://x", "ck-from-ctx")));
+            Optional.of(seed), Optional.of(new SiteContext("https://x", CLIENT_KEY_FROM_CONTEXT)));
 
     assertThat(result.map(AtlassianHost::getClientKey))
         .as("context-driven enrichment must populate clientKey")
-        .contains("ck-from-ctx");
+        .contains(CLIENT_KEY_FROM_CONTEXT);
   }
 
   @Test
@@ -120,8 +123,7 @@ class AtlassianHostContextEnricherTest {
                 });
 
     Optional<AtlassianHost> result =
-        enricher.update(
-            Optional.of(seed), Optional.of(new SiteContext("https://site.example", "ck")));
+        enricher.update(Optional.of(seed), Optional.of(new SiteContext(SITE_BASE_URL, "ck")));
 
     assertThat(result.map(AtlassianHost::getCloudId))
         .as("seed identifiers must be preserved when enriching in place")

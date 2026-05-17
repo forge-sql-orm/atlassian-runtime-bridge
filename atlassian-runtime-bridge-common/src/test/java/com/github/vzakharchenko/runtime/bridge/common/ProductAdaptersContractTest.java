@@ -37,7 +37,7 @@ class ProductAdaptersContractTest {
     }
 
     @Test
-    void authenticatedAsAddon_returnsConfiguredTemplate() {
+    void authenticatedAsAddonReturnsConfiguredTemplate() {
       AtlassianHost host = sampleHost();
       RestTemplate expected = new RestTemplate();
       adapter.configureAddon(expected);
@@ -46,7 +46,7 @@ class ProductAdaptersContractTest {
     }
 
     @Test
-    void authenticatedAsAddon_receivesHost() {
+    void authenticatedAsAddonReceivesHost() {
       AtlassianHost host = sampleHost();
       adapter.authenticatedAsAddon(host);
 
@@ -54,7 +54,7 @@ class ProductAdaptersContractTest {
     }
 
     @Test
-    void authenticatedAsCurrentUser_returnsConfiguredTemplate() {
+    void authenticatedAsCurrentUserReturnsConfiguredTemplate() {
       RestTemplate expected = new RestTemplate();
       adapter.configureCurrentUser(expected);
 
@@ -62,7 +62,7 @@ class ProductAdaptersContractTest {
     }
 
     @Test
-    void impersonation_returnsConfiguredTemplate() {
+    void impersonationReturnsConfiguredTemplate() {
       AtlassianHost host = sampleHost();
       AtlassianHostUser user = sampleUser(host);
       RestTemplate expected = new RestTemplate();
@@ -72,7 +72,7 @@ class ProductAdaptersContractTest {
     }
 
     @Test
-    void impersonation_receivesHostUser() {
+    void impersonationReceivesHostUser() {
       AtlassianHost host = sampleHost();
       AtlassianHostUser user = sampleUser(host);
       adapter.impersonation(user);
@@ -92,7 +92,7 @@ class ProductAdaptersContractTest {
     }
 
     @Test
-    void authenticatedAsAddon_returnsConfiguredTemplate() {
+    void authenticatedAsAddonReturnsConfiguredTemplate() {
       AtlassianHost host = sampleHost();
       RestTemplate expected = new RestTemplate();
       adapter.configureAddon(expected);
@@ -101,7 +101,7 @@ class ProductAdaptersContractTest {
     }
 
     @Test
-    void authenticatedAsAddon_receivesHost() {
+    void authenticatedAsAddonReceivesHost() {
       AtlassianHost host = sampleHost();
       adapter.authenticatedAsAddon(host);
 
@@ -109,7 +109,7 @@ class ProductAdaptersContractTest {
     }
 
     @Test
-    void authenticatedAsCurrentUser_returnsConfiguredTemplate() {
+    void authenticatedAsCurrentUserReturnsConfiguredTemplate() {
       RestTemplate expected = new RestTemplate();
       adapter.configureCurrentUser(expected);
 
@@ -117,7 +117,7 @@ class ProductAdaptersContractTest {
     }
 
     @Test
-    void impersonation_returnsConfiguredTemplate() {
+    void impersonationReturnsConfiguredTemplate() {
       AtlassianHost host = sampleHost();
       AtlassianHostUser user = sampleUser(host);
       RestTemplate expected = new RestTemplate();
@@ -127,7 +127,7 @@ class ProductAdaptersContractTest {
     }
 
     @Test
-    void impersonation_receivesHostUser() {
+    void impersonationReceivesHostUser() {
       AtlassianHost host = sampleHost();
       AtlassianHostUser user = sampleUser(host);
       adapter.impersonation(user);
@@ -147,7 +147,7 @@ class ProductAdaptersContractTest {
     }
 
     @Test
-    void authenticatedAsAddon_returnsConfiguredTemplate() {
+    void authenticatedAsAddonReturnsConfiguredTemplate() {
       AtlassianHost host = sampleHost();
       RestTemplate expected = new RestTemplate();
       adapter.configureAddon(expected);
@@ -156,7 +156,7 @@ class ProductAdaptersContractTest {
     }
 
     @Test
-    void authenticatedAsAddon_receivesHost() {
+    void authenticatedAsAddonReceivesHost() {
       AtlassianHost host = sampleHost();
       adapter.authenticatedAsAddon(host);
 
@@ -164,7 +164,7 @@ class ProductAdaptersContractTest {
     }
 
     @Test
-    void authenticatedAsCurrentUser_returnsConfiguredTemplate() {
+    void authenticatedAsCurrentUserReturnsConfiguredTemplate() {
       RestTemplate expected = new RestTemplate();
       adapter.configureCurrentUser(expected);
 
@@ -172,7 +172,7 @@ class ProductAdaptersContractTest {
     }
 
     @Test
-    void impersonation_returnsConfiguredTemplate() {
+    void impersonationReturnsConfiguredTemplate() {
       AtlassianHost host = sampleHost();
       AtlassianHostUser user = sampleUser(host);
       RestTemplate expected = new RestTemplate();
@@ -182,7 +182,7 @@ class ProductAdaptersContractTest {
     }
 
     @Test
-    void impersonation_receivesHostUser() {
+    void impersonationReceivesHostUser() {
       AtlassianHost host = sampleHost();
       AtlassianHostUser user = sampleUser(host);
       adapter.impersonation(user);

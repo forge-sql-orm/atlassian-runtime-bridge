@@ -28,12 +28,12 @@ class ConnectOnForgeContextTest {
   }
 
   @Test
-  void order_isLowestSoConnectLookupRunsFirst() {
+  void orderIsLowestSoConnectLookupRunsFirst() {
     assertThat(enricher.order()).isEqualTo(ConnectOnForgeContext.CONNECT_LOOKUP_ORDER);
   }
 
   @Test
-  void update_returnsMinimalHostWhenRepositoryBeanMissing() {
+  void updateReturnsMinimalHostWhenRepositoryBeanMissing() {
     ConnectOnForgeContext withoutRepo = new ConnectOnForgeContext(Optional.empty());
     AtlassianHost minimal = minimalHost(CLOUD_FROM_FIT);
 
@@ -41,7 +41,7 @@ class ConnectOnForgeContextTest {
   }
 
   @Test
-  void update_mergesBaseUrlFromStoredHostRow() {
+  void updateMergesBaseUrlFromStoredHostRow() {
     AtlassianHost minimal = minimalHost(CLOUD_FROM_FIT);
     AtlassianHost stored = storedHost();
 
@@ -56,7 +56,7 @@ class ConnectOnForgeContextTest {
   }
 
   @Test
-  void update_doesNotMutateRowReturnedFromRepository() {
+  void updateDoesNotMutateRowReturnedFromRepository() {
     AtlassianHost minimal = minimalHost(CLOUD_FROM_FIT);
     AtlassianHost stored = storedHost();
 
@@ -69,7 +69,7 @@ class ConnectOnForgeContextTest {
   }
 
   @Test
-  void update_preservesCloudIdFromForgeInvocationOverStoredRow() {
+  void updatePreservesCloudIdFromForgeInvocationOverStoredRow() {
     AtlassianHost minimal = minimalHost(CLOUD_FROM_FIT);
     when(hostByInstallationIdRepository.findByInstallationId(INSTALLATION_ID))
         .thenReturn(Optional.of(storedHost()));
@@ -82,7 +82,7 @@ class ConnectOnForgeContextTest {
   }
 
   @Test
-  void update_keepsSharedSecretFromStoredRow() {
+  void updateKeepsSharedSecretFromStoredRow() {
     AtlassianHost minimal = minimalHost(CLOUD_FROM_FIT);
     when(hostByInstallationIdRepository.findByInstallationId(INSTALLATION_ID))
         .thenReturn(Optional.of(storedHost()));
@@ -103,7 +103,7 @@ class ConnectOnForgeContextTest {
   }
 
   @Test
-  void update_returnsMinimalHostWhenInstallationNotInDatabase() {
+  void updateReturnsMinimalHostWhenInstallationNotInDatabase() {
     AtlassianHost minimal = minimalHost("cloud-1");
     when(hostByInstallationIdRepository.findByInstallationId(INSTALLATION_ID))
         .thenReturn(Optional.empty());
