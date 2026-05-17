@@ -10,15 +10,23 @@ on:
   pull_request:
     types: [opened, synchronize, reopened]
 
+# Default-deny at the workflow level; each job grants exactly what it needs.
+permissions: {}
+
 jobs:
   static_analysis:
     name: Static analysis
     runs-on: ubuntu-latest
+    permissions:
+      contents: read           # actions/checkout
+      pull-requests: write     # SonarCloud PR decoration / inline comments
+      checks: write            # SonarCloud check status posted via GITHUB_TOKEN
     if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          persist-credentials: false   # checkout does not write GITHUB_TOKEN to .git/config
 
       - uses: actions/setup-java@v4
         with:
@@ -42,7 +50,7 @@ jobs:
           -Dsonar.projectKey=forge-sql-orm_atlassian-runtime-bridge
 
       - name: Upload JaCoCo to Qlty
-        uses: qltysh/qlty-action/coverage@v2
+        uses: qltysh/qlty-action/coverage@a19242102d17e497f437d7466aa01b528537e899 # v2.2.0
         env:
           JACOCO_SOURCE_PATH: atlassian-runtime-bridge-common/src/main/java atlassian-runtime-bridge-forge/src/main/java
         with:
