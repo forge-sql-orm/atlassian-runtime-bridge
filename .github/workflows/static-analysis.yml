@@ -42,7 +42,7 @@ jobs:
           -Dsonar.projectKey=forge-sql-orm_atlassian-runtime-bridge
 
       - name: Upload JaCoCo to Qlty
-        uses: qltysh/qlty-action/coverage@v2
+        uses: qltysh/qlty-action/coverage@a19242102d17e497f437d7466aa01b528537e899 # v2.2.0
         env:
           JACOCO_SOURCE_PATH: atlassian-runtime-bridge-common/src/main/java atlassian-runtime-bridge-forge/src/main/java
         with:
