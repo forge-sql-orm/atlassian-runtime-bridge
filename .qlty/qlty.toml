@@ -1,0 +1,19 @@
+config_version = "0"
+
+# Sibling product adapters (Jira / Confluence / Other) are intentionally symmetric
+# thin classes: shared logic lives in AbstractProductForgeAdapter and
+# AbstractProductSelectAdapter, while each concrete sibling only differs by the
+# product-specific REST method (requestJira / requestConfluence / requestOther)
+# or the forge-adapter type instantiated in the constructor.
+#
+# qlty:similar-code flags the identical import block and class shell as
+# duplication (~40 of ~32 lines per file). The remaining differing logic is 2-4
+# lines; further deduplication would require generics gymnastics or reflection,
+# which would hurt readability without removing real duplication.
+[[triage]]
+match.rules = ["qlty:similar-code"]
+match.file_patterns = [
+  "atlassian-runtime-bridge-forge/**/products/*ProductForgeAdapter.java",
+  "atlassian-runtime-bridge-forge/**/products/*ProductSelectAdapter.java",
+]
+set.ignored = true
