@@ -112,19 +112,13 @@ class AtlassianForgeSecurityBridgeServiceImplTest {
     return impl;
   }
 
-  private static ForgeApiContext forgeApiContext(
-      ObjectMapper mapper,
-      String installationId,
-      String cloudId,
-      String clientKey,
-      String siteUrl,
-      String principalOrNull) {
-    ObjectNode contextJson = mapper.createObjectNode();
-    contextJson.put("cloudId", cloudId);
-    contextJson.put("clientKey", clientKey);
-    contextJson.put("siteUrl", siteUrl);
+  private ForgeApiContext forgeApiContext(String principalOrNull) {
+    ObjectNode contextJson = objectMapper.createObjectNode();
+    contextJson.put("cloudId", CLOUD_ID);
+    contextJson.put("clientKey", CLIENT_KEY);
+    contextJson.put("siteUrl", SITE_URL);
     ForgeApp forgeApp = new ForgeApp();
-    forgeApp.setInstallationId(installationId);
+    forgeApp.setInstallationId(INSTALLATION_ID);
     ForgeInvocationToken forgeInvocationToken = new ForgeInvocationToken();
     forgeInvocationToken.setApp(forgeApp);
     forgeInvocationToken.setContext(contextJson);
@@ -171,9 +165,7 @@ class AtlassianForgeSecurityBridgeServiceImplTest {
 
     @Test
     void mapsInvocationContextToHostUserWithAccountIdWhenPrincipalPresent() {
-      ForgeApiContext ctx =
-          forgeApiContext(
-              objectMapper, INSTALLATION_ID, CLOUD_ID, CLIENT_KEY, SITE_URL, IDENTITY_USER_ARI);
+      ForgeApiContext ctx = forgeApiContext(IDENTITY_USER_ARI);
       forgeSecurityContextRetriever.setForgeApiContext(Optional.of(ctx));
 
       assertThat(
@@ -186,8 +178,7 @@ class AtlassianForgeSecurityBridgeServiceImplTest {
 
     @Test
     void mapsInvocationContextToHostUserWithoutAccountWhenPrincipalMissing() {
-      ForgeApiContext ctx =
-          forgeApiContext(objectMapper, INSTALLATION_ID, CLOUD_ID, CLIENT_KEY, SITE_URL, null);
+      ForgeApiContext ctx = forgeApiContext(null);
       forgeSecurityContextRetriever.setForgeApiContext(Optional.of(ctx));
 
       assertThat(
@@ -200,8 +191,7 @@ class AtlassianForgeSecurityBridgeServiceImplTest {
 
     @Test
     void delegatesToHostContextEnricherWhenRegistered() {
-      ForgeApiContext ctx =
-          forgeApiContext(objectMapper, INSTALLATION_ID, CLOUD_ID, CLIENT_KEY, SITE_URL, null);
+      ForgeApiContext ctx = forgeApiContext(null);
       forgeSecurityContextRetriever.setForgeApiContext(Optional.of(ctx));
       AtlassianHost enriched = new AtlassianHost();
       enriched.setInstallationId(INSTALLATION_ID);
