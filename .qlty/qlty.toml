@@ -13,7 +13,7 @@ config_version = "0"
 [[triage]]
 match.rules = ["qlty:similar-code"]
 match.file_patterns = [
-  "atlassian-runtime-bridge-forge/**/products/*ProductForgeAdapter.java",
-  "atlassian-runtime-bridge-forge/**/products/*ProductSelectAdapter.java",
+  "bridge-forge-connect/**/products/*ProductForgeAdapter.java",
+  "bridge-forge-connect/**/products/*ProductSelectAdapter.java",
 ]
 set.ignored = true

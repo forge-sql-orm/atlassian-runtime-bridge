@@ -52,11 +52,11 @@ jobs:
       - name: Upload JaCoCo to Qlty
         uses: qltysh/qlty-action/coverage@a19242102d17e497f437d7466aa01b528537e899 # v2.2.0
         env:
-          JACOCO_SOURCE_PATH: atlassian-runtime-bridge-common/src/main/java atlassian-runtime-bridge-forge/src/main/java
+          JACOCO_SOURCE_PATH: bridge-common/src/main/java bridge-forge-connect/src/main/java
         with:
           token: ${{ secrets.QLTY_COVERAGE_TOKEN }}
           format: jacoco
           skip-missing-files: true
           files: |
-            atlassian-runtime-bridge-common/target/site/jacoco/jacoco.xml
-            atlassian-runtime-bridge-forge/target/site/jacoco/jacoco.xml
+            bridge-common/target/site/jacoco/jacoco.xml
+            bridge-forge-connect/target/site/jacoco/jacoco.xml

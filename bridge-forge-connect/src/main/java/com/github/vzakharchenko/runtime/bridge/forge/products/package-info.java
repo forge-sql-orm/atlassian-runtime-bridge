@@ -2,7 +2,7 @@
  * Runtime selection between <strong>Connect</strong> and <strong>Forge</strong> when calling
  * Atlassian product REST APIs from the same Spring codebase.
  *
- * <p><b>Entry points for application code</b> (defined in {@code atlassian-runtime-bridge-common}):
+ * <p><b>Entry points for application code</b> (defined in {@code bridge-common}):
  * {@link com.github.vzakharchenko.runtime.bridge.common.JiraProductAdapter}, {@link
  * com.github.vzakharchenko.runtime.bridge.common.ConfluenceProductAdapter}, {@link
  * com.github.vzakharchenko.runtime.bridge.common.OtherProductAdapter}.
