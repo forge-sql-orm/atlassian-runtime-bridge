@@ -20,6 +20,18 @@
         <module>bridge-connect-container</module>
     </modules>
 
+    <name>atlassian-runtime-bridge</name>
+    <description>Spring Boot helpers for hybrid Atlassian Connect + Forge add-ons and for Forge Containers: one codebase that can serve classic Connect iframe traffic, Forge Remote, or a containerised Spring service while reusing the same product-facing abstractions.</description>
+    <url>https://github.com/forge-sql-orm/atlassian-runtime-bridge</url>
+
+    <licenses>
+        <license>
+            <name>MIT License</name>
+            <url>https://opensource.org/licenses/MIT</url>
+            <distribution>repo</distribution>
+        </license>
+    </licenses>
+
     <developers>
         <developer>
             <id>owner</id>
@@ -28,6 +40,14 @@
             <timezone>UTC+2</timezone>
         </developer>
     </developers>
+
+    <scm>
+        <connection>scm:git:git@github.com:forge-sql-orm/atlassian-runtime-bridge.git</connection>
+        <developerConnection>scm:git:git@github.com:forge-sql-orm/atlassian-runtime-bridge.git</developerConnection>
+        <url>https://github.com/forge-sql-orm/atlassian-runtime-bridge</url>
+        <tag>HEAD</tag>
+    </scm>
+
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
@@ -47,6 +67,12 @@
         <installGitHooks.skip>false</installGitHooks.skip>
         <exec-maven-plugin.version>3.6.3</exec-maven-plugin.version>
         <jacoco.version>0.8.14</jacoco.version>
+        <!-- Sonatype Central release toolchain -->
+        <maven-source-plugin.version>3.3.1</maven-source-plugin.version>
+        <maven-javadoc-plugin.version>3.11.2</maven-javadoc-plugin.version>
+        <maven-release-plugin.version>3.1.1</maven-release-plugin.version>
+        <maven-gpg-plugin.version>3.2.7</maven-gpg-plugin.version>
+        <central-publishing-maven-plugin.version>0.9.0</central-publishing-maven-plugin.version>
         <jacoco.minimum.line.covered.ratio>0.85</jacoco.minimum.line.covered.ratio>
         <!-- SonarScanner for Maven (profile sonar); https://central.sonatype.com/artifact/org.sonarsource.scanner.maven/sonar-maven-plugin -->
         <sonar-maven-plugin.version>5.6.0.6792</sonar-maven-plugin.version>
@@ -222,6 +248,53 @@
                     <artifactId>sonar-maven-plugin</artifactId>
                     <version>${sonar-maven-plugin.version}</version>
                 </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-source-plugin</artifactId>
+                    <version>${maven-source-plugin.version}</version>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-javadoc-plugin</artifactId>
+                    <version>${maven-javadoc-plugin.version}</version>
+                    <configuration>
+                        <!-- Lenient Javadoc generation: Central just needs the jar to exist; we
+                             still get warnings, but consumers in IDEs see the real docs. -->
+                        <doclint>none</doclint>
+                        <source>${java.version}</source>
+                        <quiet>true</quiet>
+                        <failOnError>false</failOnError>
+                    </configuration>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-release-plugin</artifactId>
+                    <version>${maven-release-plugin.version}</version>
+                    <configuration>
+                        <autoVersionSubmodules>true</autoVersionSubmodules>
+                        <tagNameFormat>v@{project.version}</tagNameFormat>
+                        <releaseProfiles>sign</releaseProfiles>
+                        <goals>deploy</goals>
+                    </configuration>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-gpg-plugin</artifactId>
+                    <version>${maven-gpg-plugin.version}</version>
+                </plugin>
+                <plugin>
+                    <groupId>org.sonatype.central</groupId>
+                    <artifactId>central-publishing-maven-plugin</artifactId>
+                    <version>${central-publishing-maven-plugin.version}</version>
+                    <extensions>true</extensions>
+                    <configuration>
+                        <publishingServerId>central</publishingServerId>
+                        <!-- 'automatic' = publish immediately after upload; switch to
+                             'user_managed' to require manual release in the Central UI. -->
+                        <autoPublish>true</autoPublish>
+                        <waitUntil>published</waitUntil>
+                    </configuration>
+                </plugin>
             </plugins>
         </pluginManagement>
         <plugins>
@@ -248,6 +321,41 @@
                         </configuration>
                     </execution>
                 </executions>
+            </plugin>
+            <!-- Sources jar — Sonatype Central requires <artifact>-sources.jar for every module. -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-source-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>attach-sources</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>jar-no-fork</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <!-- Javadoc jar — Sonatype Central requires <artifact>-javadoc.jar for every module. -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-javadoc-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>attach-javadocs</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>jar</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <!-- Central Publisher Plugin replaces the default deploy goal; needs server id 'central'
+                 in ~/.m2/settings.xml (username = portal token name, password = portal token value). -->
+            <plugin>
+                <groupId>org.sonatype.central</groupId>
+                <artifactId>central-publishing-maven-plugin</artifactId>
+                <extensions>true</extensions>
             </plugin>
         </plugins>
     </build>
@@ -287,6 +395,29 @@
                         <groupId>org.sonarsource.scanner.maven</groupId>
                         <artifactId>sonar-maven-plugin</artifactId>
                         <inherited>false</inherited>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+        <!-- Sonatype Central requires every artifact to be GPG-signed.
+             Activate during a release: `mvn -Psign deploy` or via release.sh
+             (which forwards -Dgpg.passphrase=…). -->
+        <profile>
+            <id>sign</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-gpg-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>sign-artifacts</id>
+                                <phase>verify</phase>
+                                <goals>
+                                    <goal>sign</goal>
+                                </goals>
+                            </execution>
+                        </executions>
                     </plugin>
                 </plugins>
             </build>
