@@ -1,0 +1,36 @@
+# Local egress proxy sidecar only — Spring runs on the host (mvn spring-boot:run).
+# cp .env.example .env, set APP_ID / ENV_ID / ENV_NAME, then ./dev-loop.sh
+# Or: mvn spring-boot:run (terminal 1) + docker compose up (terminal 2).
+
+services:
+#  java-service:
+#    build:
+#      context: ../../..
+#      dockerfile: examples/atlassian-connect-forge-spring-boot-sample/java-service/Dockerfile
+#    image: java-service:latest
+#    container_name: java-service
+#    ports:
+#      - "8080:8080"
+#      - "8000:8000"
+#    environment:
+#      FORGE_EGRESS_PROXY_URL: http://proxy-sidecar:7072
+#      ENABLE_DEBUG: ${ENABLE_DEBUG:-false}
+
+  proxy-sidecar:
+    image: forge-ecr.services.atlassian.com/forge-platform/proxy-sidecar:latest
+    container_name: java-service-proxy-sidecar
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      SERVICE_URL: http://host.docker.internal:8080
+      FOP_BASE_URL: https://forge-outbound-proxy.services.atlassian.com
+      APP_ID: ari:cloud:ecosystem::app/${APP_ID}
+      ENV_ID: ari:cloud:ecosystem::environment/${APP_ID}/${ENV_ID}
+      JWKS_URL: https://forge.cdn.prod.atlassian-dev.net/.well-known/jwks.json
+      IS_LOCAL_DEV: "true"
+    ports:
+      - "7071:7071"
+      - "7072:7072"
+#    depends_on:
+#      - java-service

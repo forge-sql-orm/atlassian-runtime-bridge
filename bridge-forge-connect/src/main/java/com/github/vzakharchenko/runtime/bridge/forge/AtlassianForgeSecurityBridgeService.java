@@ -19,7 +19,7 @@ import org.springframework.security.core.Authentication;
  *       context;
  *   <li>{@link #getAuthentication(AtlassianHostUser)} / {@link #getAuthentication(AtlassianHost)} —
  *       construct {@link com.atlassian.connect.spring.internal.auth.frc.ForgeAuthentication} for
- *       programmatic flows (see also {@link ManualAuthorizationService});
+ *       programmatic flows (see also {@link ManualAuthorizationServiceImpl});
  * </ul>
  */
 public interface AtlassianForgeSecurityBridgeService {

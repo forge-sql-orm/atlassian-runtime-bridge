@@ -1,0 +1,36 @@
+#!/bin/bash
+# Template: copy to build-and-deploy.sh (gitignored) and set your values.
+#
+#   cp build-and-deploy.sh.example build-and-deploy.sh
+#   chmod +x build-and-deploy.sh
+#   FORGE_ENV=development ./build-and-deploy.sh
+#
+set -euo pipefail
+
+APP_ID="${APP_ID:-<your-app-uuid>}"
+FORGE_ENV="${FORGE_ENV:?Set FORGE_ENV (e.g. development)}"
+CONTAINER_KEY="${CONTAINER_KEY:-java-service}"
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(cd "$SCRIPT_DIR/../../.." && pwd)"
+
+FORGE_APP_ID="${APP_ID}"
+REPO_URI="forge-ecr.services.atlassian.com/forge/${FORGE_APP_ID}/${CONTAINER_KEY}"
+export TAG="${TAG:-$(date +%s)}"
+
+echo "=== Building and pushing container (linux/amd64) → ${REPO_URI}:${TAG} ==="
+forge containers docker-login
+docker build \
+  --platform linux/amd64 \
+  -f "${SCRIPT_DIR}/Dockerfile" \
+  -t "${REPO_URI}:${TAG}" \
+  "${REPO_ROOT}"
+docker push "${REPO_URI}:${TAG}"
+
+echo "=== Setting Forge environment variables ==="
+cd "${SCRIPT_DIR}"
+forge variables set TAG "${TAG}" -e "${FORGE_ENV}"
+
+echo "=== Deploying to Forge ==="
+forge deploy -e "${FORGE_ENV}"
+forge install --upgrade -e "${FORGE_ENV}"

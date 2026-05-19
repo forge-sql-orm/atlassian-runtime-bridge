@@ -1,6 +1,34 @@
 # Atlassian Connect + Forge (single Spring Boot backend)
 
-One codebase for **Connect** (Jira iframe) and **Forge** (Custom UI + `forge-remote` to the same URL): shared UI and Jira calls; only the transport to your backend and the authorization model for Jira API calls differ.
+One codebase for **Connect** (Jira iframe) and **Forge** (Custom UI + remote backend): shared UI and Jira calls; only the transport to your backend and the authorization model for Jira API calls differ.
+
+The sample is a **Maven multi-module** project:
+
+| Module | Artifact | Role |
+|--------|----------|------|
+| **`frontend/`** | `sample-frontend` | TypeScript/React sources, Thymeleaf templates, Forge `customUI` shell; `npm run build` produces Connect `bundle.js` (classpath) and Forge `customUI/` (for `forge deploy`). |
+| **`core/`** | `sample-core` | Shared business logic: `HelloWorldController`, Jira DTOs, `atlassian-connect.json`. |
+| **`forge-connect/`** | `sample-forge-connect` | **Hybrid** runnable app: Connect lifecycle + iframe UI **and** Forge Custom UI / remotes. `manifest.yml` includes `connectModules` and `app.connect` with JWT. |
+| **`forge-remote/`** | `sample-forge-remote` | **Forge-only** deployment descriptor: same backend as `forge-connect`, but manifest has **no** `connectModules` — the add-on is fully migrated off Connect UI and lifecycle in Forge. |
+| **`forge-container/`** | `sample-forge-container` | **Forge Containers**: Spring runs **in a container** on Atlassian infrastructure; uses `bridge-connect-container` (egress sidecar, ingress headers). See **[`forge-container/README.md`](forge-container/README.md)**. |
+
+### Hybrid vs Forge-only vs Forge Container
+
+| | **`forge-connect`** | **`forge-remote`** | **`forge-container`** |
+|---|---------------------|-------------------|------------------------|
+| Target audience | Coexist Connect + Forge during migration | Production shape after Connect → Forge migration | Spring on **Forge Containers** (EAP) |
+| Jira UI | Connect iframe **and** Forge Custom UI | Forge Custom UI only | Forge Custom UI only |
+| `connectModules` | Yes | **Removed** | **Removed** |
+| Backend wiring | `remotes.baseUrl` → your HTTPS URL | `remotes.baseUrl` → your URL | **`services`** + container image in ECR |
+| Custom UI build output | `./customUI` | `../forge-connect/customUI` | `./customUI` (via `npm run build:container`) |
+| Spring Boot | `mvn spring-boot:run` in **`forge-connect/`** | Same JVM as hybrid | `mvn spring-boot:run` in **`forge-container/`** |
+| Deploy docs | This README | [`forge-remote/manifest.yml`](forge-remote/manifest.yml) | **[`forge-container/README.md`](forge-container/README.md)** |
+
+Both manifests share the same **`app.id`**, triggers (`scheduledTrigger`, install/upgrade → `POST /system/sync`), and endpoint paths on the Spring app. Only the Forge-side wiring and Connect module surface differ.
+
+Run **Spring Boot** from **`forge-connect/`** (hybrid / forge-remote backend) or **`forge-container/`** (Containers). Run the **Forge CLI** from the module whose `manifest.yml` you deploy.
+
+**Forge Container quick start:** [`forge-container/README.md`](forge-container/README.md) — local: `mvn spring-boot:run` + `./dev-loop.sh`; cloud: copy `build-and-deploy.sh.example` → `build-and-deploy.sh` (not committed).
 
 ---
 
@@ -17,10 +45,11 @@ One codebase for **Connect** (Jira iframe) and **Forge** (Custom UI + `forge-rem
 
 ### 1. Register the Forge app
 
-From the directory that contains `manifest.yml`:
+From **`forge-connect/`** (hybrid) or **`forge-remote/`** (Forge-only) — one registration per `app.id`:
 
 ```bash
-cd examples/atlassian-connect-forge-spring-boot-sample
+cd examples/atlassian-connect-forge-spring-boot-sample/forge-connect
+# or: cd .../forge-remote
 forge register
 ```
 
@@ -28,52 +57,86 @@ Follow the CLI prompts (developer space, app name, etc.). Atlassian will assign 
 
 ### 2. Copy `app.id` into Spring
 
-1. Open [`manifest.yml`](manifest.yml) and read **`app.id`** (under the top-level `app:` key).
-2. Paste the same value into [`src/main/resources/application.yml`](src/main/resources/application.yml) as **`app.id`**: the bridge reads `${app.id}` (e.g. when building Forge invocation context).
+1. Open [`forge-connect/manifest.yml`](forge-connect/manifest.yml) and read **`app.id`** (under the top-level `app:` key).
+2. Paste the same value into [`forge-connect/src/main/resources/application.yml`](forge-connect/src/main/resources/application.yml) as **`app.id`**: the bridge reads `${app.id}` (e.g. when building Forge invocation context).
 
 **`app.id` must match between the manifest and `application.yml`.**
 
 ### 3. Point everything at your public backend URL
 
-- In **`manifest.yml`**: `remotes` → `baseUrl` = your Spring app’s HTTPS origin (same host Connect and Forge use).
-- In **`application.yml`**: `addon.base-url` = the same URL (Connect descriptor and Forge remote must hit the **same** instance).
+- In the manifest you deploy (**[`forge-connect/manifest.yml`](forge-connect/manifest.yml)** or **[`forge-remote/manifest.yml`](forge-remote/manifest.yml)**): `remotes` → `baseUrl` = your Spring app’s HTTPS origin.
+- In **`forge-connect/src/main/resources/application.yml`**: `addon.base-url` = the same URL (Spring and Forge remotes must hit the **same** instance).
 
 ### 4. Build the project
 
-From **this** sample module (or from the repo root with `-pl`):
+From the **sample parent** (builds `frontend` → `core` → `forge-connect`):
 
 ```bash
+cd examples/atlassian-connect-forge-spring-boot-sample
 mvn clean install
 ```
 
-The Maven build runs npm `prebuild`: dependencies install and **both** Connect and Forge bundles are produced (see [Frontend](#frontend-connect-and-forge)).
+The **`frontend`** module runs `npm run build` during `generate-resources`:
+
+- **Connect**: `frontend/target/classes/static/bundle.js` → packaged in `sample-frontend` JAR (on the Spring classpath).
+- **Forge**: `forge-connect/customUI/bundle.js` + `index.html` (used by `forge deploy`; path in manifest: `./customUI`).
 
 ### 5. Run Spring Boot
 
-From your IDE or:
+From **`forge-connect`**:
 
 ```bash
+cd forge-connect
 mvn spring-boot:run
+```
+
+Or from the parent with `-pl`:
+
+```bash
+mvn spring-boot:run -pl forge-connect
 ```
 
 Confirm the app is reachable at the URL you set in `addon.base-url` / `remotes.baseUrl`.
 
 ### 6. Deploy and install Forge
 
+**Hybrid (Connect + Forge)** — from [`forge-connect/`](forge-connect/):
+
 ```bash
+cd forge-connect
 forge deploy
 forge install
 ```
 
-Pick the product (Jira), environment, and site. After install, Jira will expose **Connect** entry points (`connectModules`) and **Forge** modules (`modules`), both targeting the **same** backend via `forge-remote` / Connect base URL.
+**Forge-only (post-migration)** — from [`forge-remote/`](forge-remote/) after the same `mvn clean install` and with Spring still running from `forge-connect`:
+
+```bash
+cd forge-remote
+forge deploy
+forge install
+```
+
+Use **one** manifest per Forge app installation on a site (do not deploy both manifests to the same app id unless you intend to replace the hybrid deployment).
+
+Pick the product (Jira), environment, and site.
+
+- **Hybrid**: Jira exposes **Connect** entry points (`connectModules`) and **Forge** modules (`modules`), both targeting the **same** Spring backend.
+- **Forge-only**: only Forge modules — no Connect general page or Connect lifecycle URLs in the manifest; users open the app via **Apps** → Forge global page (Custom UI).
 
 ### 7. Verify in Jira
 
+**Hybrid (`forge-connect` manifest)**
+
 1. Open Jira on the site where you installed the app.
 2. **Connect**: header item from `jira:generalPages` (e.g. “Atlaskit”) — iframe loads your Spring; JWT via Connect.
-3. **Forge**: **Apps** → your app with the Forge global page — Custom UI; calls to your Spring use the **remote** path (`@forge/bridge`) with Forge auth (app user / system token as declared in the manifest).
+3. **Forge**: **Apps** → your app with the Forge global page — Custom UI; calls to your Spring use the remote (`@forge/bridge`) with Forge auth.
 
-Both paths share **one** UI/logic repo; the differences:
+**Forge-only (`forge-remote` manifest)**
+
+1. There is **no** Connect navigation item from `connectModules`.
+2. **Apps** → your app → Forge global page (Custom UI) — same React bundle as hybrid (`forge-connect/customUI`), remote key `forge-remote` in the manifest.
+
+Both deployment modes share **one** Spring codebase and frontend repo; the differences:
 
 | | Connect (iframe) | Forge (Custom UI) |
 |---|------------------|-------------------|
@@ -117,7 +180,7 @@ This endpoint assumes a **valid Forge system access token** for the installation
 
 The token must be refreshed periodically or Jira calls will start failing. In this sample, refresh is **driven** by:
 
-1. **`scheduledTrigger`** in `manifest.yml` — periodic call to remote `system-token-sync` → Spring `POST /system/sync` ([`ForgeController`](src/main/java/sample/connect/spring/atlaskit/ForgeController.java)).
+1. **`scheduledTrigger`** in `manifest.yml` — periodic call to remote `system-token-sync` → Spring `POST /system/sync` ([`ForgeController`](forge-connect/src/main/java/sample/connect/spring/atlaskit/ForgeController.java)).
 2. **`trigger`** on `avi:forge:installed:app` and `avi:forge:upgraded:app` — same endpoint after install/upgrade.
 3. Any **Custom UI traffic** over `forge-remote` to your backend — your Connect Spring stack may persist/update whatever is needed for later calls (implement in `ForgeController` / services).
 
@@ -127,24 +190,24 @@ The sample `POST /system/sync` only returns the string `synced`; a real app shou
 
 ## Frontend: Connect and Forge
 
-Sources: [`src/main/resources/javascript/`](src/main/resources/javascript/).
+Sources: [`frontend/src/main/resources/javascript/`](frontend/src/main/resources/javascript/).
 
 - Shared: `main.ts`, `shared/helloBackend.ts`, `shared/transportContract.ts`, etc.
 - Transport split: **`connect.ts`** vs **`forge.ts`**; the build swaps the **`app-transport`** alias (same import in code, different implementation).
 
-### Commands
+### Commands (from `frontend/`)
 
 | Command | Purpose |
 |--------|---------|
 | `npm install` | Dependencies (`@forge/bridge`, React, esbuild, …). |
-| `npm run build:connect` | **Connect bundle**: entry `main.ts` → `target/classes/static/bundle.js` (IIFE, esbuild). Alias `app-transport` → **`connect.ts`**: plain **`window.fetch`** to your Spring with Connect JWT. |
-| `npm run build:forge` | **Forge Custom UI**: entry `forgeEntry.ts` → `customUI/bundle.js` + copied `index.html`. Alias `app-transport` → **`forge.ts`**: **`@forge/bridge`** (`requestRemote`) to remote `connect`. |
-| `npm run build` | Both bundles (`build:connect` then `build:forge`). Invoked from Maven via `prebuild` / `exec-maven-plugin`. |
+| `npm run build:connect` | **Connect bundle** → `frontend/target/classes/static/bundle.js` (included in `sample-frontend` JAR). |
+| `npm run build:forge` | **Forge Custom UI** → `forge-connect/customUI/bundle.js` + copied `index.html`. |
+| `npm run build` | Both bundles. Invoked from Maven (`frontend` module, `generate-resources`). |
 | `npm run watch` | Rebuild **Connect** bundle on file changes (iframe dev loop). |
 | `npm run typecheck` | `tsc --noEmit` only. |
 
-Connect page template: [`src/main/resources/templates/atlaskit.html`](src/main/resources/templates/atlaskit.html).  
-Forge Custom UI: [`src/main/resources/customUI/`](src/main/resources/customUI/) plus output under module root `customUI/` for `forge deploy`.
+Connect page template: [`frontend/src/main/resources/templates/atlaskit.html`](frontend/src/main/resources/templates/atlaskit.html).  
+Forge Custom UI shell: [`frontend/src/main/resources/customUI/`](frontend/src/main/resources/customUI/) → build output under **`forge-connect/customUI/`**.
 
 ---
 
@@ -152,18 +215,21 @@ Forge Custom UI: [`src/main/resources/customUI/`](src/main/resources/customUI/) 
 
 | File | Role |
 |------|------|
-| [`manifest.yml`](manifest.yml) | Hybrid Forge + Connect: `app.id`, remotes, `jira:globalPage`, `scheduledTrigger`, `trigger`, endpoints. |
-| [`src/main/resources/application.yml`](src/main/resources/application.yml) | `app.id`, datasource, `addon.base-url`. |
-| [`src/main/resources/atlassian-connect.json`](src/main/resources/atlassian-connect.json) | Connect descriptor (module keys, etc.). |
+| [`forge-connect/manifest.yml`](forge-connect/manifest.yml) | **Hybrid**: `connectModules`, `app.connect.authentication: jwt`, remote `connect`, Forge `modules` + triggers. |
+| [`forge-remote/manifest.yml`](forge-remote/manifest.yml) | **Forge-only**: no `connectModules`; remote `forge-remote`; Custom UI resource points at `../forge-connect/customUI`. |
+| [`forge-container/README.md`](forge-container/README.md) | **Forge Containers**: local dev (`dev-loop.sh`), Docker/ECR deploy, manifest `java-service`. |
+| [`forge-connect/src/main/resources/application.yml`](forge-connect/src/main/resources/application.yml) | `app.id`, datasource, `addon.base-url` (used by Spring for **both** deployment modes). |
+| [`core/src/main/resources/atlassian-connect.json`](core/src/main/resources/atlassian-connect.json) | Connect descriptor (still on classpath for hybrid; unused by Forge-only UI surface). |
 
 ---
 
 ## Checklist before first `forge deploy`
 
-- [ ] `forge register` done; `app.id` matches in manifest and `application.yml`
-- [ ] `remotes[].baseUrl` and `addon.base-url` point at your Spring **HTTPS** URL
-- [ ] `mvn clean install` succeeded (including `npm run build`)
-- [ ] Spring is running and reachable from the internet at that URL
-- [ ] `forge deploy` and `forge install` target the intended Jira Cloud site
+- [ ] `forge register` done in **`forge-connect/`** or **`forge-remote/`** (same `app.id` in both manifests)
+- [ ] `app.id` matches in the manifest you deploy and in `forge-connect/.../application.yml`
+- [ ] `remotes[].baseUrl` (in that manifest) and `addon.base-url` point at your Spring **HTTPS** URL
+- [ ] `mvn clean install` succeeded from the sample parent (including `npm run build` in `frontend`)
+- [ ] Spring is running from **`forge-connect`** and reachable from the internet at that URL
+- [ ] `forge deploy` and `forge install` run from **`forge-connect/`** (hybrid) **or** **`forge-remote/`** (Forge-only)
 
-After that, Jira should show both Connect and Forge entry points into the **same** backend, with different authorization when calling Jira APIs, as described above.
+After **hybrid** deploy, Jira shows Connect and Forge entry points. After **forge-remote** deploy, only the Forge Custom UI path remains — same backend, migration-complete manifest.

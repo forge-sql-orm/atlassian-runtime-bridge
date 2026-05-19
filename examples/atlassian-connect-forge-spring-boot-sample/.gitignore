@@ -1,0 +1,9 @@
+node_modules/
+frontend/node_modules/
+**/target/
+forge-connect/customUI/bundle.js
+forge-connect/customUI/bundle.css
+customUI/
+forge-container/.env
+forge-container/build-and-deploy.sh
+forge-container/.container-service-assets/

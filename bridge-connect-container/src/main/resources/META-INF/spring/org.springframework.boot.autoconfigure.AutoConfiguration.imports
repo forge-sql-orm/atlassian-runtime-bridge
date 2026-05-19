@@ -1,0 +1,2 @@
+com.github.vzakharchenko.runtime.bridge.containers.AtlassianConnectForgeContainerAutoConfiguration
+com.github.vzakharchenko.runtime.bridge.containers.ContainerWebSecurityConfiguration

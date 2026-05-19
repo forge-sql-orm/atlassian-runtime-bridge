@@ -1,6 +1,6 @@
 # atlassian-runtime-bridge
 
-Spring Boot helpers for **hybrid Atlassian Connect + Forge** add-ons: one codebase can serve classic Connect iframe traffic and **Forge Remote** / container runtimes while reusing the same product-facing abstractions.
+Spring Boot helpers for **hybrid Atlassian Connect + Forge** add-ons and for **Forge Containers**: one codebase can serve classic Connect iframe traffic, **Forge Remote**, or a **containerised** Spring service while reusing the same product-facing abstractions (`JiraProductAdapter`, `ManualAuthorizationService`, …).
 
 Built against **Atlassian Connect Spring Boot 6.x** and **Spring Boot 3.4.x** (see the root `pom.xml`).
 
@@ -9,16 +9,27 @@ Built against **Atlassian Connect Spring Boot 6.x** and **Spring Boot 3.4.x** (s
 [![Code Smells](https://sonarcloud.io/api/project_badges/measure?project=forge-sql-orm_atlassian-runtime-bridge&metric=code_smells)](https://sonarcloud.io/summary/new_code?id=forge-sql-orm_atlassian-runtime-bridge)
 [![Coverage](https://sonarcloud.io/api/project_badges/measure?project=forge-sql-orm_atlassian-runtime-bridge&metric=coverage)](https://sonarcloud.io/summary/new_code?id=forge-sql-orm_atlassian-runtime-bridge)
 
+[![Maintainability](https://qlty.sh/gh/forge-sql-orm/projects/atlassian-runtime-bridge/maintainability.svg)](https://qlty.sh/gh/forge-sql-orm/projects/atlassian-runtime-bridge)
+[![Code Coverage](https://qlty.sh/gh/forge-sql-orm/projects/atlassian-runtime-bridge/coverage.svg)](https://qlty.sh/gh/forge-sql-orm/projects/atlassian-runtime-bridge)
+
 ## Modules
 
 | Artifact | Role |
 |----------|------|
-| **`bridge-common`** | Small, dependency-light API surface: product-scoped HTTP entry points (`JiraProductAdapter`, `ConfluenceProductAdapter`, `OtherProductAdapter`) and `AtlassianHostContextEnricher` for enriching `AtlassianHost` built from Forge context. |
-| **`bridge-forge-connect`** | Depends on `bridge-common`. Registers Forge-oriented beans: security bridge, servlet filter, GraphQL impersonation, Connect-vs-Forge **select** adapters, optional JPA lookup by `installationId`, and related utilities. |
+| **`bridge-common`** | Small, dependency-light API surface: product-scoped HTTP entry points (`JiraProductAdapter`, `ConfluenceProductAdapter`, `OtherProductAdapter`), `ManualAuthorizationService`, and `AtlassianHostContextEnricher` for enriching `AtlassianHost` built from Forge context. |
+| **`bridge-forge-connect`** | Depends on `bridge-common`. For **hybrid / Forge Remote** apps: security bridge, servlet filter, GraphQL impersonation, Connect-vs-Forge **select** adapters, optional JPA lookup by `installationId`, and related utilities. |
+| **`bridge-connect-container`** | Depends on `bridge-common`. For **Forge Containers** only: ingress filters (`x-forge-invocation-id`), egress sidecar client, container `JiraProductAdapter`, and Connect/JPA auto-config suppression. |
 
-Application code should depend only on **`bridge-forge-connect`** (it pulls `bridge-common` transitively).
+| Deployment | Depend on |
+|------------|-----------|
+| Connect iframe and/or Forge Remote to your URL | **`bridge-forge-connect`** (pulls `bridge-common`) |
+| Spring JAR/image on **Forge Containers** | **`bridge-connect-container`** (pulls `bridge-common`) |
+
+Do not put **`bridge-forge-connect`** and **`bridge-connect-container`** on the same classpath — they target different runtimes.
 
 ## Maven coordinates
+
+**Hybrid / Forge Remote:**
 
 ```xml
 <dependency>
@@ -28,9 +39,19 @@ Application code should depend only on **`bridge-forge-connect`** (it pulls `bri
 </dependency>
 ```
 
-You still need Atlassian Connect Spring Boot starters on the classpath (see the [sample](examples/atlassian-connect-forge-spring-boot-sample/) `pom.xml`). For **Connect-persisted host rows** (shared secret, `baseUrl`, entitlements, etc.) add **`atlassian-connect-spring-boot-jpa-starter`** and a datasource — the bridge registers an extra repository only when Connect’s JPA auto-configuration is present (see [Connect host persistence](#connect-host-persistence-jpa)).
+**Forge Containers:**
 
-## Enabling the bridge in your Spring Boot app
+```xml
+<dependency>
+    <groupId>com.github.vzakharchenko</groupId>
+    <artifactId>bridge-connect-container</artifactId>
+    <version>1.0-SNAPSHOT</version>
+</dependency>
+```
+
+You still need Atlassian Connect Spring Boot artifacts on the classpath where noted below (see the [sample](examples/atlassian-connect-forge-spring-boot-sample/) `pom.xml`). For **Connect-persisted host rows** in hybrid apps, add **`atlassian-connect-spring-boot-jpa-starter`** and a datasource — the forge bridge registers an extra repository only when Connect’s JPA auto-configuration is present (see [Connect host persistence](#connect-host-persistence-jpa)). **Container apps do not use JPA** — the container module excludes datasource/JPA auto-configurations automatically.
+
+## Enabling the bridge in your Spring Boot app (hybrid / Forge Remote)
 
 1. Add the dependency above (plus Connect starter, JPA if you persist hosts/tokens, web, etc.).
 2. **Component-scan** the bridge packages. The library is not registered via `META-INF/spring/org.springframework.boot.autoconfigure.AutoConfiguration.imports`; you anchor scanning on `AtlassianConnectForgeAutoConfiguration` so all `com.github.vzakharchenko.runtime.bridge.*` beans load together with your app:
@@ -183,9 +204,165 @@ It is enabled by **`AtlassianConnectForgeJpaAutoConfiguration`**, which is condi
 
 **`ConnectOnForgeContext`** injects `Optional<AtlassianHostByInstallationIdRepository>`: if the bean is absent, enrichment from the host table is skipped.
 
+## Forge Containers (`bridge-connect-container`)
+
+Use this module when your Spring Boot app runs **inside a Forge Container** (platform routes traffic to your image; Jira/Confluence REST goes through the **egress proxy sidecar**, not Connect host REST clients or a public `remotes.baseUrl`).
+
+Official reference: [Forge Containers](https://developer.atlassian.com/platform/forge/containers-reference/).
+
+### How it differs from `bridge-forge-connect`
+
+| | **`bridge-forge-connect`** | **`bridge-connect-container`** |
+|---|---------------------------|--------------------------------|
+| Traffic | Browser / Forge Remote → your HTTPS URL | Forge → your container; sidecar on `FORGE_EGRESS_PROXY_URL` |
+| Jira REST | Connect `AtlassianHostRestClients` or Forge `AtlassianForgeRestClients` (select adapters) | Always via egress proxy (`/jira/...`) |
+| Ingress auth | Connect JWT + `AtlassianForgeFilter` | `x-forge-invocation-id` → sidecar `/invocation/context` |
+| Connect JPA / host table | Optional enrichment | **Excluded** (no datasource) |
+| Spring registration | `@ComponentScan` on `AtlassianConnectForgeAutoConfiguration` | Boot **`AutoConfiguration.imports`** + environment post-processor |
+
+### Enabling in your app
+
+1. Add **`bridge-connect-container`** and **`spring-boot-starter-web`**.
+2. Add **`atlassian-connect-spring-boot-core`** only (types for `ForgeAuthentication`, `AtlassianHost`, …) — **not** `atlassian-connect-spring-boot-starter`, **not** `atlassian-connect-spring-boot-jpa-starter`, **not** `bridge-forge-connect`.
+3. Anchor component scan on the container auto-configuration (same pattern as hybrid, different anchor class):
+
+```java
+@SpringBootApplication
+@ComponentScan(basePackageClasses = {
+        com.github.vzakharchenko.runtime.bridge.containers
+                .AtlassianConnectForgeContainerAutoConfiguration.class,
+        MyApplication.class
+})
+public class MyApplication { /* ... */ }
+```
+
+**`AtlassianConnectForgeContainerAutoConfiguration`** is also listed in `META-INF/spring/org.springframework.boot.autoconfigure.AutoConfiguration.imports`, so beans load even without scan; scanning the class keeps your app and bridge packages aligned (see the [sample `AddonApplication`](examples/atlassian-connect-forge-spring-boot-sample/forge-container/src/main/java/sample/connect/spring/atlaskit/AddonApplication.java)).
+
+On startup, **`ContainerAutoConfigurationEnvironmentPostProcessor`** merges **`spring.autoconfigure.exclude`** so Connect web/JPA, JDBC, Liquibase, Quartz, and Redis auto-configurations do not start in a typical container deployment (see **`ContainerExcludedAutoConfigurations`**).
+
+### Configuration
+
+| Property / env | Default | Purpose |
+|----------------|---------|---------|
+| **`egress.proxy.url`** | `http://localhost:7072` | Base URL of the Forge **egress sidecar** (local docker-compose or platform-injected `FORGE_EGRESS_PROXY_URL` in cloud) |
+| **`FORGE_EGRESS_PROXY_URL`** | — | Often set in `application.yaml` as `${FORGE_EGRESS_PROXY_URL:http://localhost:7072}` (see [sample `application.yaml`](examples/atlassian-connect-forge-spring-boot-sample/forge-container/src/main/resources/application.yaml)) |
+| **`app.id`** | — | Forge manifest `app.id` when building `ForgeApp` metadata in manual authorization paths |
+/| **`bridge.container.security.public-paths`** | `[/health]` | List of request matchers (Ant patterns) exempt from `SecurityFilterChain` authentication. Override per app when health/liveness or other public endpoints differ from the default. Anything **not** listed requires an authenticated principal (typically set by `ContainerAuthorizationFilter`). |
+
+Example `application.yaml`:
+
+```yaml
+egress:
+  proxy:
+    url: ${FORGE_EGRESS_PROXY_URL:http://localhost:7072}
+
+bridge:
+  container:
+    security:
+      public-paths:
+        - /health
+        - /actuator/health/**
+        - /api/public/**
+```
+
+**Local dev:** run Spring on the host (`mvn spring-boot:run`, port **8080**), start the platform **proxy sidecar** (ports **7071** / **7072**), then `forge tunnel`. Full steps: **[`forge-container/README.md`](examples/atlassian-connect-forge-spring-boot-sample/forge-container/README.md)**.
+
+**Cloud deploy:** build the image from the **repository root** (`forge-container/Dockerfile`), push to Forge ECR (`forge containers create` + `docker push`), set Forge variable **`TAG`**, `forge deploy`. Use [`build-and-deploy.sh.example`](examples/atlassian-connect-forge-spring-boot-sample/forge-container/build-and-deploy.sh.example) locally (the real `build-and-deploy.sh` is gitignored).
+
+Expose a platform health check (sample: **`GET /health`** → `OK`).
+
+### Runtime flow
+
+```text
+Jira / Forge UI
+      │
+      ▼
+Forge platform ──ingress──► your container :8080
+      │                      (x-forge-invocation-id)
+      │                      ContainerAuthorizationFilter
+      │                      → ForgeAuthentication in SecurityContext
+      │
+      └──egress sidecar :7072──► Jira REST (/jira/rest/api/…)
+             ▲
+             └── EgressClientService / JiraProductAdapterImpl
+                 (forge-proxy-authorization: Forge id=… / installationId=…)
+```
+
+### Beans you use in application code
+
+| Bean | Role |
+|------|------|
+| **`JiraProductAdapter`** (`JiraProductAdapterImpl`) | Same interface as hybrid; implementation calls **`EgressClientService.jiraTemplateRequest`** |
+| **`EgressClientService`** | Sidecar JSON APIs (`/invocation/context`) and Jira path factory |
+| **`ForgeContextService`** | Resolves invocation context from egress for ingress filter |
+| **`ManualAuthorizationService`** (`ManualAuthorizationServiceImpl`) | Seed **`SecurityContextHolder`** for background work, webtriggers, or tests (rejects cross-tenant `cloudId` when a context already exists) |
+| **`ContainerAuthorizationFilter`** | Ingress: when `x-forge-invocation-id` is present, populates `SecurityContextHolder` with `ForgeAuthentication`. Inserted **inside** the Spring Security chain via `addFilterAfter(SecurityContextHolderFilter.class)` — running before `SecurityContextHolderFilter` (or entirely outside the chain) would let it reload an empty deferred context from the stateless repository and overwrite the installed authentication, after which `AuthorizationFilter` rejects non-public paths with 403 |
+| **`ContainerWebSecurityConfiguration`** | Stateless HTTP security (no form login). Public paths come from `bridge.container.security.public-paths` (default `[/health]`); everything else requires an authenticated principal set by `ContainerAuthorizationFilter` |
+
+**`ManualAuthorizationService`** overloads match the hybrid module (`authorize(AtlassianHostUser)`, `authorize(AtlassianHost)`, `authorize(cloudId, installationId, accountId)`). Clear the security context after background tasks.
+
+### Reaching endpoints via webtrigger
+
+The container is not internet-routable — only Forge platform reaches it. To expose a backend route as a public URL (browser, cron, external system), declare a **`webtrigger`** module in `manifest.yml` pointing at an `endpoint` that maps to your Spring path:
+
+```yaml
+modules:
+  webtrigger:
+    - key: my-trigger
+      endpoint: my-trigger-ep
+  endpoint:
+    - key: my-trigger-ep
+      service: java-service
+      route:
+        path: /api/my-trigger      # your @GetMapping path
+```
+
+Then `forge webtrigger create -e <env>` returns a URL of the form `https://<app-id>.hello.atlassian-dev.net/x1/<webtrigger-token>` that Forge routes to that endpoint inside your container. The token authorizes the **URL**, not the caller — treat it as a capability URL and add caller-side controls when needed.
+
+Webtrigger requests do not carry a Connect iframe JWT. The recommended controller pattern is:
+
+```java
+@GetMapping("/api/my-trigger")
+@IgnoreJwt
+@ResponseBody
+public Map<String, String> myTrigger(
+    @RequestParam String accountId,
+    @RequestParam String cloudId,
+    @RequestParam String installationId) {
+
+  manualAuthorizationService.authorize(cloudId, installationId, Optional.of(accountId));
+  // select adapters now see a ForgeAuthentication with that AtlassianHostUser
+  return ...;
+}
+```
+
+`ManualAuthorizationService.authorize(...)` seeds `SecurityContextHolder` with a `ForgeAuthentication` so the **select adapters** (`JiraProductAdapter`, …) call the egress sidecar as that user without any further wiring. The same call also enforces **tenant isolation** — if a `ForgeAuthentication` is already in the context (e.g. you compose the trigger with another authenticated flow), the new `cloudId` must match the existing one, otherwise an `IllegalStateException("Cross tenant authorization is not allowed: …")` is thrown. This prevents a webtrigger URL minted for tenant A from being used to drive Jira calls against tenant B.
+
+End-to-end example with real URL shape, query parameters, and CLI commands: **[`forge-container/README.md` → Calling `/api/impersonation` via webtrigger](examples/atlassian-connect-forge-spring-boot-sample/forge-container/README.md#calling-apiimpersonation-via-webtrigger)**.
+
+### Manifest and container image (sample)
+
+In **[`examples/.../forge-container/manifest.yml`](examples/atlassian-connect-forge-spring-boot-sample/forge-container/manifest.yml)**:
+
+- **`containers[].key`**: `java-service` (must match `forge containers create -k …` and ECR repo name)
+- **`services`**: routes Forge modules to the container
+- **`app.connect.remote`**: Connect key for shared descriptors (no Connect iframe in this sample)
+- Deployed image tag: Forge variable **`${TAG}`**
+
+See **[`forge-container/README.md`](examples/atlassian-connect-forge-spring-boot-sample/forge-container/README.md)** for register, Custom UI build, `dev-loop.sh`, and deploy.
+
 ## Example project
 
-See **[examples/atlassian-connect-forge-spring-boot-sample](examples/atlassian-connect-forge-spring-boot-sample/)** and its **[README](examples/atlassian-connect-forge-spring-boot-sample/README.md)** for `manifest.yml`, tunneling, and end-to-end run instructions.
+See **[examples/atlassian-connect-forge-spring-boot-sample](examples/atlassian-connect-forge-spring-boot-sample/)** and its **[README](examples/atlassian-connect-forge-spring-boot-sample/README.md)** for the multi-module layout:
+
+| Module | Bridge | Docs |
+|--------|--------|------|
+| **`forge-connect/`** | `bridge-forge-connect` | Hybrid Connect + Forge Custom UI |
+| **`forge-remote/`** | Same JVM as `forge-connect` | Forge-only manifest (post-migration) |
+| **`forge-container/`** | `bridge-connect-container` | **[`forge-container/README.md`](examples/atlassian-connect-forge-spring-boot-sample/forge-container/README.md)** — Containers EAP, sidecar, ECR deploy |
+| **`core/`**, **`frontend/`** | Shared business logic and Custom UI bundles | Parent README |
+
+**`forge-remote`** is the same Spring backend with Connect modules stripped from the manifest. **`forge-container`** is a separate Spring module (no Connect JPA, no `bridge-forge-connect`) built for the container image and egress proxy.
 
 ## Build
 
@@ -217,7 +394,7 @@ SpotBugs uses **`config/spotbugs/exclude-filter.xml`** for known false positives
 
 ### Git pre-commit hook
 
-Hooks live in **`.githooks/`** (tracked in git). **`pre-commit`** runs **`mvn spotless:apply`**, then **`mvn clean install`** at the repository root (full reactor, **tests on**, **`verify`** including **JaCoCo** check and report), then **`mvn jacoco:report`** for **`bridge-common`** and **`bridge-forge-connect`** (refreshes HTML under each module’s **`target/site/jacoco/`**), prints **`file://…/target/site/jacoco/index.html`** paths, then **`mvn clean install`** for **`examples/atlassian-connect-forge-spring-boot-sample`** (example build and tests).
+Hooks live in **`.githooks/`** (tracked in git). **`pre-commit`** runs **`mvn spotless:apply`**, then **`mvn clean install`** at the repository root (full reactor including **`bridge-connect-container`**, **tests on**, **`verify`** including **JaCoCo** check and report), then **`mvn jacoco:report`** for **`bridge-common`** and **`bridge-forge-connect`** (refreshes HTML under each module’s **`target/site/jacoco/`**), prints **`file://…/target/site/jacoco/index.html`** paths, then **`mvn clean install`** for **`examples/atlassian-connect-forge-spring-boot-sample`** (example build and tests).
 
 **Automatic registration:** building from the **repository root** runs **`scripts/install-git-hooks.sh`** on the **`initialize`** phase (via **`exec-maven-plugin`**, `inherited=false`), so a normal **`mvn clean install`** (or any goal that runs `initialize`) sets **`git config core.hooksPath .githooks`** for this clone.
 

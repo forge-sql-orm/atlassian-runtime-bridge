@@ -13,4 +13,13 @@
             <Class name="com.github.vzakharchenko.runtime.bridge.forge.products.AbstractProductForgeAdapter"/>
         </Or>
     </Match>
+    <!-- AppContext: Jackson DTO for /invocation/context; nested beans are not shared after mapping. -->
+    <Match>
+        <Bug pattern="EI_EXPOSE_REP,EI_EXPOSE_REP2"/>
+        <Or>
+            <Class name="com.github.vzakharchenko.runtime.bridge.containers.AppContext"/>
+            <Class name="com.github.vzakharchenko.runtime.bridge.containers.AppContext$App"/>
+            <Class name="com.github.vzakharchenko.runtime.bridge.containers.AppContext$Context"/>
+        </Or>
+    </Match>
 </FindBugsFilter>

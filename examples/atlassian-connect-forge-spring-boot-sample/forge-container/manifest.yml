@@ -1,0 +1,77 @@
+# Forge Container sample: tunnel to Spring (see services) + Forge modules aligned with forge-remote.
+# Custom UI bundle: ../forge-connect/customUI (built by frontend module; not modified here).
+
+services:
+  - key: java-service
+    containers:
+      - key: java-service
+#        tunnel:
+#          docker:
+#            build:
+#              context: .
+#              dockerfile: ./Dockerfile
+#            ports:
+#              - "8080:8080"
+        tag: ${TAG}
+        health:
+          type: http
+          route:
+            path: /health
+        resources:
+          cpu: "1"
+          memory: "2Gi"
+
+app:
+  id: ari:cloud:ecosystem::app/cbad754b-3ea4-4759-a6ef-eb575b1a7427
+  connect:
+    key: runtime-bridge-spring-boot-sample-atlaskit
+    remote: java-service
+  runtime:
+    name: nodejs24.x
+
+modules:
+  jira:globalPage:
+    - key: atlaskit-page-jira-remote
+      resource: main
+      resolver:
+        endpoint: java-service-ui
+      layout: blank
+      title: Atlaskit (Forge Container)
+  webtrigger:
+    - key: impersonation-webtrigger
+      endpoint: impersonation-ep
+  endpoint:
+    - key: java-service-ui
+      service: java-service
+      route:
+        path: /atlaskit/api/hello
+    - key: impersonation-ep
+      service: java-service
+      route:
+        path: /api/impersonation
+
+resources:
+  - key: main
+    path: ./customUI
+
+permissions:
+  scopes:
+    act-as-user:connect-jira:
+      allowImpersonation: false
+    read:connect-jira:
+      allowImpersonation: false
+    read:application-role:jira:
+      allowImpersonation: true
+    read:group:jira:
+      allowImpersonation: true
+    read:user:jira:
+      allowImpersonation: true
+    read:avatar:jira:
+      allowImpersonation: true
+
+environment:
+  variables:
+    - key: TAG
+      default: latest
+    - key: APP_ID
+      default: cbad754b-3ea4-4759-a6ef-eb575b1a7427
