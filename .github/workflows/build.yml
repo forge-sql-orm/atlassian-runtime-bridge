@@ -1,0 +1,88 @@
+# PR / push build that mirrors the local `.githooks/pre-commit` hook end-to-end.
+#
+# Pre-commit runs (in this order):
+#   1. mvn spotless:apply               — fixes formatting on the developer's box
+#   2. mvn clean install                — tests + verify (spotless:check,
+#                                         Checkstyle, SpotBugs, PMD, JaCoCo check)
+#   3. mvn clean install on the example — full sample reactor build
+#
+# In CI we cannot let Spotless rewrite the working tree (that would mask
+# formatting bugs and dirty the PR), so step 1 becomes a strict
+# `spotless:check`. Step 2 already enforces the same check via the verify
+# phase, but we keep the explicit step first so a formatting failure is
+# obvious in the workflow log without scrolling through the full build.
+name: Build (mirrors pre-commit)
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+  push:
+    branches: [main]
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+# Cancel an in-flight run when the PR is force-pushed; saves CI minutes
+# without ever leaving a half-built target/ on the runner (the runner is
+# disposable anyway).
+concurrency:
+  group: build-${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Library + example build
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          # Spotless / PMD / SpotBugs only need the current tree; no history.
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+          cache: maven
+
+      # Fast-fail formatting gate. `mvn clean install` below also runs
+      # spotless:check (verify phase), but doing it here keeps the
+      # `Spotless` failure obvious and skips the (slow) test+static-checks
+      # leg when the developer forgot to run `mvn spotless:apply`.
+      - name: Verify formatting (spotless:check)
+        run: mvn -B -ntp spotless:check
+
+      # Full library reactor build: compile + tests + verify (Checkstyle,
+      # SpotBugs, PMD, JaCoCo check) + install. The `install` part puts the
+      # bridge-* jars in ~/.m2/repository so the example reactor below can
+      # resolve them.
+      - name: Library reactor — clean install (tests + static checks)
+        run: mvn -B -ntp clean install
+
+      # Example reactor mirrors what pre-commit does as its last step. The
+      # frontend module brings frontend-maven-plugin which downloads Node
+      # into target/node/ on the runner.
+      - name: Example reactor — clean install
+        run: >
+          mvn -B -ntp clean install
+          -f examples/atlassian-connect-forge-spring-boot-sample/pom.xml
+
+      # Make the JaCoCo HTML reports reachable from the run summary so
+      # reviewers can drill into uncovered lines on a failing PR without
+      # rebuilding locally.
+      - name: Upload JaCoCo HTML reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: jacoco-html
+          path: |
+            bridge-common/target/site/jacoco/**
+            bridge-forge-connect/target/site/jacoco/**
+            bridge-connect-container/target/site/jacoco/**
+          retention-days: 14
+          if-no-files-found: ignore
