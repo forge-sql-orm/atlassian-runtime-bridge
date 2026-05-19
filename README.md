@@ -293,7 +293,7 @@ Forge platform ──ingress──► your container :8080
 | **`EgressClientService`** | Sidecar JSON APIs (`/invocation/context`) and Jira path factory |
 | **`ForgeContextService`** | Resolves invocation context from egress for ingress filter |
 | **`ManualAuthorizationService`** (`ManualAuthorizationServiceImpl`) | Seed **`SecurityContextHolder`** for background work, webtriggers, or tests (rejects cross-tenant `cloudId` when a context already exists) |
-| **`ContainerAuthorizationFilter`** | Ingress: optional auth when `x-forge-invocation-id` is present |
+| **`ContainerAuthorizationFilter`** | Ingress: when `x-forge-invocation-id` is present, populates `SecurityContextHolder` with `ForgeAuthentication`. Registered as a `FilterRegistrationBean` with order `-150` so it runs **before** Spring Security's `FilterChainProxy` (order `-100`); otherwise `AuthorizationFilter` would reject every non-public path with 403 before authentication is established |
 | **`ContainerWebSecurityConfiguration`** | Stateless HTTP security (no form login). Public paths come from `bridge.container.security.public-paths` (default `[/health]`); everything else requires an authenticated principal set by `ContainerAuthorizationFilter` |
 
 **`ManualAuthorizationService`** overloads match the hybrid module (`authorize(AtlassianHostUser)`, `authorize(AtlassianHost)`, `authorize(cloudId, installationId, accountId)`). Clear the security context after background tasks.

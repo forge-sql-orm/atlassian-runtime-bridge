@@ -14,18 +14,22 @@ import org.slf4j.LoggerFactory;
 import org.springframework.lang.NonNull;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 /**
- * Ingress filter for Forge Container requests: when {@link
- * ForgeIngressHeaders#INVOCATION_ID} is present, loads {@link ForgeAuthentication} via {@link
- * ForgeContextService} and installs it for the remainder of the filter chain.
+ * Ingress filter for Forge Container requests: when {@link ForgeIngressHeaders#INVOCATION_ID} is
+ * present, loads {@link ForgeAuthentication} via {@link ForgeContextService} and installs it for
+ * the remainder of the filter chain.
  *
  * <p>The security context is always cleared in a {@code finally} block so thread-local state does
  * not leak across requests.
+ *
+ * <p>Registered as a {@code FilterRegistrationBean} with order {@code -150} in {@link
+ * com.github.vzakharchenko.runtime.bridge.containers.AtlassianConnectForgeContainerAutoConfiguration}
+ * so it runs <strong>before</strong> Spring Security's {@code FilterChainProxy} (order {@code
+ * -100}). Without this ordering, {@code AuthorizationFilter} would reject every non-public path
+ * with 403 before this filter could seed {@code SecurityContextHolder}.
  */
-@Component
 public class ContainerAuthorizationFilter extends OncePerRequestFilter {
 
   private static final Logger log = LoggerFactory.getLogger(ContainerAuthorizationFilter.class);

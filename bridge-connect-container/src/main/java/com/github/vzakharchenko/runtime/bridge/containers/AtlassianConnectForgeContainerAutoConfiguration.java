@@ -1,6 +1,9 @@
 package com.github.vzakharchenko.runtime.bridge.containers;
 
+import com.github.vzakharchenko.runtime.bridge.containers.filters.ContainerAuthorizationFilter;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
+import org.springframework.boot.web.servlet.FilterRegistrationBean;
+import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 
 /**
@@ -17,4 +20,21 @@ import org.springframework.context.annotation.ComponentScan;
 @AutoConfiguration
 @ComponentScan("com.github.vzakharchenko.runtime.bridge.common")
 @ComponentScan("com.github.vzakharchenko.runtime.bridge.containers")
-public class AtlassianConnectForgeContainerAutoConfiguration {}
+public class AtlassianConnectForgeContainerAutoConfiguration {
+
+  /**
+   * Registers {@link ContainerAuthorizationFilter} ahead of Spring Security
+   * ({@code SecurityProperties.Filter.DEFAULT_ORDER = -100}). Running before the security chain
+   * means the filter seeds {@code SecurityContextHolder} with {@code ForgeAuthentication} before
+   * {@code AuthorizationFilter} evaluates {@code anyRequest().authenticated()}; otherwise Spring
+   * Security rejects every non-public path with 403.
+   */
+  @Bean
+  FilterRegistrationBean<ContainerAuthorizationFilter> containerAuthorizationFilterRegistration(
+      ForgeContextService forgeContextService) {
+    var registration =
+        new FilterRegistrationBean<>(new ContainerAuthorizationFilter(forgeContextService));
+    registration.setOrder(-150);
+    return registration;
+  }
+}
