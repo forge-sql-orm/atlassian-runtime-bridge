@@ -67,10 +67,10 @@ jobs:
       # Example reactor mirrors what pre-commit does as its last step. The
       # frontend module brings frontend-maven-plugin which downloads Node
       # into target/node/ on the runner.
-#      - name: Example reactor — clean install
-#        run: >
-#          mvn -B -ntp clean install
-#          -f examples/atlassian-connect-forge-spring-boot-sample/pom.xml
+      - name: Example reactor — clean install
+        run: >
+          mvn -B -ntp clean install
+          -f examples/atlassian-connect-forge-spring-boot-sample/pom.xml
 
       # Make the JaCoCo HTML reports reachable from the run summary so
       # reviewers can drill into uncovered lines on a failing PR without
