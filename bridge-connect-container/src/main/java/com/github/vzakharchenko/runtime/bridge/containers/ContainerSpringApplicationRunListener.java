@@ -11,6 +11,11 @@ import org.springframework.core.env.ConfigurableEnvironment;
  */
 public class ContainerSpringApplicationRunListener implements SpringApplicationRunListener {
 
+  /**
+   * Signature dictated by Spring Boot's {@code SpringApplicationRunListener} SPI — the runtime
+   * loads listeners by reflectively invoking this exact constructor; the arguments are unused.
+   */
+  @SuppressWarnings("unused")
   public ContainerSpringApplicationRunListener(SpringApplication application, String... args) {}
 
   @Override

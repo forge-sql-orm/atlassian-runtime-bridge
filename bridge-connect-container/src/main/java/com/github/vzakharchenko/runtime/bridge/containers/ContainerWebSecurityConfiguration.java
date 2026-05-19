@@ -43,7 +43,12 @@ public class ContainerWebSecurityConfiguration {
       ContainerAuthorizationFilter containerAuthorizationFilter)
       throws Exception {
     String[] publicPaths = properties.getPublicPaths().toArray(new String[0]);
-    http.csrf(AbstractHttpConfigurer::disable)
+    // CSRF protection is intentionally disabled: Forge Containers expose a stateless backend
+    // reached only via the Forge platform (no cookies, no session, no browser-origin form posts).
+    // Identity is established per request from x-forge-invocation-id by
+    // ContainerAuthorizationFilter; there is no authenticated session that a third-party site
+    // could ride. Re-enable CSRF if you ever add cookie-based auth or browser form endpoints.
+    http.csrf(AbstractHttpConfigurer::disable) // NOSONAR java:S4502 — stateless, no session
         .formLogin(AbstractHttpConfigurer::disable)
         .httpBasic(AbstractHttpConfigurer::disable)
         .logout(AbstractHttpConfigurer::disable)
