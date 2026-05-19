@@ -1,0 +1,133 @@
+name: Dependency autoupdate (every 6h)
+
+on:
+  schedule:
+    # Every 6 hours at the top of the hour (00:00, 06:00, 12:00, 18:00 UTC)
+    - cron: "0 */6 * * *"
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+  pull-requests: write
+  issues: write
+
+concurrency:
+  group: autoupdate
+  cancel-in-progress: true
+
+jobs:
+  autoupdate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+          token: ${{ secrets.AUTOUPDATE_PAT }}
+
+      - name: Set up JDK 21
+        # scripts/update-dependencies.sh drives versions-maven-plugin against
+        # the library reactor and frontend-maven-plugin against the sample,
+        # so a JDK and Maven cache are the only prerequisites the runner needs.
+        # Node + npm are downloaded by frontend-maven-plugin into target/, so
+        # we deliberately do NOT install a system Node here.
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+          cache: maven
+
+      - name: Configure git as PR author
+        run: |
+          git config user.name "Vasyl Zakharchenko"
+          git config user.email "vaszakharchenko@gmail.com"
+
+      - name: Ensure label exists
+        env:
+          GH_TOKEN: ${{ secrets.AUTOUPDATE_PAT }}
+        run: |
+          gh label create dependencies_updated \
+            --color "0E8A16" \
+            --description "Automated dependency updates" \
+            --force
+
+      - name: Close existing autoupdate PRs and delete their branches
+        env:
+          GH_TOKEN: ${{ secrets.AUTOUPDATE_PAT }}
+        run: |
+          # 1) Close PRs carrying the label (auto-deletes the head branch).
+          prs=$(gh pr list --label dependencies_updated --state open --json number --jq '.[].number')
+          if [ -n "$prs" ]; then
+            for pr in $prs; do
+              echo "Closing PR #$pr"
+              gh pr close "$pr" \
+                --delete-branch \
+                --comment "Superseded by today's autoupdate run."
+            done
+          else
+            echo "No existing autoupdate PRs to close."
+          fi
+
+          # 2) Sweep up orphan dependencies/auto-* branches (pushed but never
+          #    PR'd — e.g. when a previous run failed before gh pr create).
+          orphans=$(gh api -X GET repos/${{ github.repository }}/branches \
+            --paginate --jq '.[].name' | grep '^dependencies/auto-' || true)
+          for b in $orphans; do
+            echo "Deleting orphan branch $b"
+            git push origin --delete "$b" || true
+          done
+
+      - name: Run scripts/update-dependencies.sh
+        run: |
+          chmod +x ./scripts/update-dependencies.sh
+          # Default flags: minor/patch only on the Maven side, latest releases
+          # on the npm side (via the package.json upgrade-deps script). Pass
+          # --allow-major if we ever want major bumps in the PR.
+          ./scripts/update-dependencies.sh
+
+      - name: Detect changes
+        id: changes
+        run: |
+          if git diff --quiet; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            echo "Nothing to update."
+          else
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Create branch, commit, push, open PR
+        if: steps.changes.outputs.changed == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.AUTOUPDATE_PAT }}
+        run: |
+          DATE=$(date -u +%Y-%m-%d)
+          BRANCH="dependencies/auto-${DATE}"
+
+          git checkout -b "$BRANCH"
+          git add -A
+
+          # Final guard: if anything regenerated lockfiles deterministically
+          # and the diff collapsed, exit cleanly — no PR needed.
+          if git diff --cached --quiet; then
+            echo "Nothing staged to commit after final add -A. Exiting cleanly."
+            exit 0
+          fi
+
+          # Skip our pre-commit hook in CI — it would run a full reactor
+          # build inside the commit, which CI already does in subsequent
+          # checks; SKIP_HOOKS=1 is the hook's documented opt-out.
+          SKIP_HOOKS=1 git commit -m "chore(deps): autoupdate ${DATE}"
+
+          # Force-push as a safety net: the orphan-branch sweep above usually
+          # clears any pre-existing remote ref, but a same-day re-run would
+          # otherwise hit non-fast-forward on the second push.
+          git push -u origin "$BRANCH" --force
+
+          gh pr create \
+            --base main \
+            --head "$BRANCH" \
+            --title "chore(deps): autoupdate ${DATE}" \
+            --body "Automated dependency update produced by \`.github/workflows/autoupdate.yml\` via \`scripts/update-dependencies.sh\`. Will auto-merge once required checks pass (see \`.github/workflows/automerge.yml\`)." \
+            --label dependencies_updated

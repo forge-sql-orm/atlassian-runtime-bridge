@@ -121,9 +121,13 @@ run_npm_upgrade_deps() {
   fi
 
   echo "--- applying npm updates via frontend-maven-plugin ---"
-  # The plugin version is resolved from the frontend pom's <build><plugins> entry,
-  # so we don't have to repeat it on the CLI here.
+  # Chain `initialize` so install-node-and-npm (validate) + npm-install (initialize)
+  # run first: they put Node/npm under target/ and resolve devDeps so `ncu` is on
+  # PATH before npm-upgrade-deps invokes it. Without this chain the explicit
+  # goal would fail at the `ncu` step on a fresh checkout.
+  # The plugin version is resolved from the frontend pom's <build><plugins> entry.
   mvn -f "$frontend_pom" -B -ntp \
+    initialize \
     com.github.eirslett:frontend-maven-plugin:npm@npm-upgrade-deps
 }
 
