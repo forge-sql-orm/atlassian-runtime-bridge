@@ -34,3 +34,11 @@ addon-db.script
 node_modules/
 customUI/bundle.js
 customUI/bundle.css
+
+# Local release wrapper — contains the PGP passphrase; never commit it
+newRelease.sh
+# Files written by maven-release-plugin between :prepare and :perform
+release.properties
+**/release.properties
+*.releaseBackup
+**/*.releaseBackup
