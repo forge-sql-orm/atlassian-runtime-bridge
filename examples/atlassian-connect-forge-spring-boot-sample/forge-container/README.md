@@ -96,6 +96,20 @@ mvn spring-boot:run
 
 Health (local / platform): **`GET /health`** → `OK` ([`ContainerHealthEndpoint`](src/main/java/sample/connect/spring/atlaskit/ContainerHealthEndpoint.java)).
 
+Only `/health` is exposed without authentication by default (`ContainerWebSecurityConfiguration`). If your app uses different liveness/readiness endpoints (Spring Boot Actuator, internal probes, public API paths), override them in `application.yaml`:
+
+```yaml
+bridge:
+  container:
+    security:
+      public-paths:
+        - /health
+        - /actuator/health/**
+        - /api/public/**
+```
+
+The list **replaces** the default — include `/health` if you still need it.
+
 ### 3. Start sidecar + tunnel
 
 ```bash

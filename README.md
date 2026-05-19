@@ -244,6 +244,7 @@ On startup, **`ContainerAutoConfigurationEnvironmentPostProcessor`** merges **`s
 | **`egress.proxy.url`** | `http://localhost:7072` | Base URL of the Forge **egress sidecar** (local docker-compose or platform-injected `FORGE_EGRESS_PROXY_URL` in cloud) |
 | **`FORGE_EGRESS_PROXY_URL`** | — | Often set in `application.yaml` as `${FORGE_EGRESS_PROXY_URL:http://localhost:7072}` (see [sample `application.yaml`](examples/atlassian-connect-forge-spring-boot-sample/forge-container/src/main/resources/application.yaml)) |
 | **`app.id`** | — | Forge manifest `app.id` when building `ForgeApp` metadata in manual authorization paths |
+/| **`bridge.container.security.public-paths`** | `[/health]` | List of request matchers (Ant patterns) exempt from `SecurityFilterChain` authentication. Override per app when health/liveness or other public endpoints differ from the default. Anything **not** listed requires an authenticated principal (typically set by `ContainerAuthorizationFilter`). |
 
 Example `application.yaml`:
 
@@ -251,6 +252,14 @@ Example `application.yaml`:
 egress:
   proxy:
     url: ${FORGE_EGRESS_PROXY_URL:http://localhost:7072}
+
+bridge:
+  container:
+    security:
+      public-paths:
+        - /health
+        - /actuator/health/**
+        - /api/public/**
 ```
 
 **Local dev:** run Spring on the host (`mvn spring-boot:run`, port **8080**), start the platform **proxy sidecar** (ports **7071** / **7072**), then `forge tunnel`. Full steps: **[`forge-container/README.md`](examples/atlassian-connect-forge-spring-boot-sample/forge-container/README.md)**.
@@ -285,7 +294,7 @@ Forge platform ──ingress──► your container :8080
 | **`ForgeContextService`** | Resolves invocation context from egress for ingress filter |
 | **`ManualAuthorizationService`** (`ManualAuthorizationServiceImpl`) | Seed **`SecurityContextHolder`** for background work, webtriggers, or tests (rejects cross-tenant `cloudId` when a context already exists) |
 | **`ContainerAuthorizationFilter`** | Ingress: optional auth when `x-forge-invocation-id` is present |
-| **`ContainerWebSecurityConfiguration`** | Stateless permit-all HTTP security (no form login); Forge auth is filter-driven |
+| **`ContainerWebSecurityConfiguration`** | Stateless HTTP security (no form login). Public paths come from `bridge.container.security.public-paths` (default `[/health]`); everything else requires an authenticated principal set by `ContainerAuthorizationFilter` |
 
 **`ManualAuthorizationService`** overloads match the hybrid module (`authorize(AtlassianHostUser)`, `authorize(AtlassianHost)`, `authorize(cloudId, installationId, accountId)`). Clear the security context after background tasks.
 
