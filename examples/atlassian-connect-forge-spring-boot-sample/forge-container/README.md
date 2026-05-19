@@ -192,11 +192,68 @@ forge install --upgrade -e "$FORGE_ENV"
 | Service / container key | `java-service` |
 | Custom UI | `./customUI` |
 | Global page | `java-service-ui` → `GET /atlaskit/api/hello` |
-| Webtrigger | `impersonation-webtrigger` → `GET /api/impersonation` |
+| Webtrigger | `impersonation-webtrigger` → `GET /api/impersonation` (only entry point — see [Calling `/api/impersonation` via webtrigger](#calling-apiimpersonation-via-webtrigger)) |
 | Health check (deployed) | `GET /health` |
 | Connect key | `runtime-bridge-spring-boot-sample-atlaskit` (for shared descriptors) |
 
 Tunnel block in `manifest.yml` is commented out for **cloud** deploy (image from ECR). Uncomment for manifest-driven local Docker tunnel if you prefer that flow.
+
+---
+
+## Calling `/api/impersonation` via webtrigger
+
+The container itself is **not** internet-routable — Forge platform fronts every request. The `@IgnoreJwt` endpoint `GET /api/impersonation` ([`BusinessLogicController`](../core/src/main/java/sample/connect/spring/atlaskit/BusinessLogicController.java)) is exposed by the `impersonation-webtrigger` module in [`manifest.yml`](manifest.yml#L40-L42), so the only way to hit it is the Forge-issued webtrigger URL.
+
+### 1. Create the webtrigger URL (once per environment)
+
+```bash
+forge webtrigger create -e "$FORGE_ENV"
+```
+
+Pick `impersonation-webtrigger` when prompted. Forge prints a URL of the form:
+
+```
+https://<app-id>.hello.atlassian-dev.net/x1/<webtrigger-token>
+```
+
+- `<app-id>` matches `manifest.yml` → `app.id` UUID (this sample: `cbad754b-3ea4-4759-a6ef-eb575b1a7427`).
+- `<webtrigger-token>` is opaque, environment-scoped, and **does not authenticate the caller** — treat it as a capability URL.
+- Reuse it across browser tabs; revoke / rotate via `forge webtrigger delete`.
+
+List existing URLs at any time:
+
+```bash
+forge webtrigger -e "$FORGE_ENV"
+```
+
+### 2. Invoke it from the browser
+
+Append the impersonation parameters the controller expects:
+
+```
+https://<app-id>.hello.atlassian-dev.net/x1/<webtrigger-token>?accountId=<accountId>&cloudId=<cloudId>&installationId=<installationId>
+```
+
+| Query param | How to find it |
+|-------------|----------------|
+| `accountId` | Jira user atlassian-account-id you want to impersonate (`/rest/api/3/myself` on a Connect/Forge install) |
+| `cloudId` | Cloud site id of the tenant where the app is installed (`/_edge/tenant_info`) |
+| `installationId` | Forge installation id for that tenant — `forge install list` shows it; the value is also persisted by the sample on install (no `ari:cloud:ecosystem::installation/` prefix needed — the controller adds it) |
+
+Forge platform routes the request to the container's `/api/impersonation` endpoint, which calls `manualAuthorizationService.authorize(host)` and then `JiraProductAdapter.impersonation(...)` to hit `/rest/api/3/myself` as that user.
+
+### 3. Tenant isolation
+
+[`ManualAuthorizationService.authorize(...)`](../../../bridge-connect-container/src/main/java/com/github/vzakharchenko/runtime/bridge/containers/ManualAuthorizationServiceImpl.java) **always** verifies that the requested `cloudId` matches the one already in the security context (set by `ContainerAuthorizationFilter` from the inbound Forge invocation token). Cross-tenant calls fail fast:
+
+```
+IllegalStateException: Cross tenant authorization is not allowed:
+  expected cloudId=<tenant-A>, received cloudId=<tenant-B>
+```
+
+In practice this means you cannot use a webtrigger URL minted in **tenant A** to authorize Jira REST calls against **tenant B**, even though the URL is publicly reachable. The check runs on every `authorize(...)` overload — `AtlassianHostUser`, `AtlassianHost`, and `(cloudId, installationId, accountId)` — and applies equally to background threads (schedulers, queues) that re-authorize after a context switch.
+
+> Webtrigger URLs do not authenticate the caller, so don't expose this endpoint to production users without an extra layer (network restriction, shared secret in a custom header, Forge FIT, etc.). The tenant guard prevents tenant-confusion attacks but not arbitrary impersonation **within** the same tenant.
 
 ---
 
@@ -208,7 +265,8 @@ Tunnel block in `manifest.yml` is commented out for **cloud** deploy (image from
 | Package JAR | `mvn package` from sample parent: `-pl forge-container -am` |
 | Docker image (local test) | From repo root: `docker build -f examples/.../forge-container/Dockerfile .` |
 | Container logs (cloud) | `forge logs --containers` |
-| Webtrigger URL | `forge webtrigger` (after deploy) |
+| Webtrigger URL — create | `forge webtrigger create -e "$FORGE_ENV"` (pick `impersonation-webtrigger`) |
+| Webtrigger URL — list/revoke | `forge webtrigger -e "$FORGE_ENV"` / `forge webtrigger delete` |
 
 ---
 
