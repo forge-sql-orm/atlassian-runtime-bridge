@@ -26,7 +26,8 @@ class ContainerSecurityPropertiesTest {
                 "bridge.container.security.public-paths[1]", "/api/public/**"));
 
     var properties =
-        new Binder(source).bind("bridge.container.security", ContainerSecurityProperties.class)
+        new Binder(source)
+            .bind("bridge.container.security", ContainerSecurityProperties.class)
             .get();
 
     assertThat(properties.getPublicPaths()).containsExactly("/my-health", "/api/public/**");

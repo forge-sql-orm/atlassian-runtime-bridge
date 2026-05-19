@@ -86,8 +86,8 @@ public class EgressClientServiceImpl implements EgressClientService {
   /**
    * Sidecar request authorized with {@code Forge id=<invocationId>}.
    *
-   * @throws com.github.vzakharchenko.runtime.bridge.containers.exceptions.EgressRequestException
-   *     on non-2xx responses
+   * @throws com.github.vzakharchenko.runtime.bridge.containers.exceptions.EgressRequestException on
+   *     non-2xx responses
    */
   public ResponseEntity<JsonNode> sendInvocationTokenRequest(
       final String requestType,

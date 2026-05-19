@@ -1,13 +1,8 @@
 egress:
   proxy:
     url: ${FORGE_EGRESS_PROXY_URL:http://localhost:7072}
-
-management:
-  endpoints:
-    web:
-      exposure:
-        include: health
-  endpoint:
-    health:
-      probes:
-        enabled: true
+bridge:
+  container:
+    security:
+      public-paths:
+        - /health

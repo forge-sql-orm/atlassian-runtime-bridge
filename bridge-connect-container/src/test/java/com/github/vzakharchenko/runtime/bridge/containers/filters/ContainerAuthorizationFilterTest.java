@@ -57,7 +57,7 @@ class ContainerAuthorizationFilterTest {
   }
 
   @Test
-  void withInvocationId_setsAuthenticationForChainThenClears() throws Exception {
+  void withInvocationId_setsAuthenticationForChain() throws Exception {
     var request = new MockHttpServletRequest();
     request.addHeader(INVOCATION_ID, INVOCATION_ID_VALUE);
     var response = new MockHttpServletResponse();
@@ -71,10 +71,11 @@ class ContainerAuthorizationFilterTest {
         request,
         response,
         (req, res) ->
-            assertThat(SecurityContextHolder.getContext().getAuthentication())
-                .isSameAs(forgeAuth));
+            assertThat(SecurityContextHolder.getContext().getAuthentication()).isSameAs(forgeAuth));
 
-    assertThat(SecurityContextHolder.getContext().getAuthentication()).isNull();
+    // Cleanup is delegated to Spring Security's SecurityContextHolderFilter (running outside the
+    // chain) — this filter no longer wipes the context itself.
+    assertThat(SecurityContextHolder.getContext().getAuthentication()).isSameAs(forgeAuth);
   }
 
   @Test
@@ -83,7 +84,8 @@ class ContainerAuthorizationFilterTest {
     request.addHeader(INVOCATION_ID, INVOCATION_ID_VALUE);
     var response = new MockHttpServletResponse();
     FilterChain chain = mock(FilterChain.class);
-    when(forgeContextService.emulateForgeAuthentication(INVOCATION_ID_VALUE)).thenReturn(Optional.empty());
+    when(forgeContextService.emulateForgeAuthentication(INVOCATION_ID_VALUE))
+        .thenReturn(Optional.empty());
 
     filter.doFilter(request, response, chain);
 

@@ -15,9 +15,9 @@ import org.springframework.web.client.RestTemplate;
  * /jira/…}) using {@code forge-proxy-authorization} derived from the current {@link
  * ForgeAuthentication}.
  *
- * <p>Requires {@link ForgeAuthentication} in {@link SecurityContextHolder} (typically set by
- * {@link com.github.vzakharchenko.runtime.bridge.containers.filters.ContainerAuthorizationFilter}
- * or {@link com.github.vzakharchenko.runtime.bridge.containers.ManualAuthorizationServiceImpl}).
+ * <p>Requires {@link ForgeAuthentication} in {@link SecurityContextHolder} (typically set by {@link
+ * com.github.vzakharchenko.runtime.bridge.containers.filters.ContainerAuthorizationFilter} or
+ * {@link com.github.vzakharchenko.runtime.bridge.containers.ManualAuthorizationServiceImpl}).
  */
 @Component
 public class JiraProductAdapterImpl implements JiraProductAdapter {

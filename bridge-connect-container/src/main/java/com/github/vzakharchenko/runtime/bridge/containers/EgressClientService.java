@@ -7,7 +7,8 @@ import org.springframework.web.client.RestTemplate;
 /**
  * Outbound calls to the Forge Containers egress sidecar ({@code FORGE_EGRESS_PROXY_URL}).
  *
- * <p>All requests use the {@value com.github.vzakharchenko.runtime.bridge.containers.ForgeEgressHeaders#FORGE_AUTHORIZATION}
+ * <p>All requests use the {@value
+ * com.github.vzakharchenko.runtime.bridge.containers.ForgeEgressHeaders#FORGE_AUTHORIZATION}
  * header. Jira product REST calls are routed under {@code /jira/…} on the proxy.
  */
 public interface EgressClientService {

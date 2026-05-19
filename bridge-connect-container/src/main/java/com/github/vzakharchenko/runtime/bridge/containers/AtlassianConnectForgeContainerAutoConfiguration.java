@@ -23,18 +23,28 @@ import org.springframework.context.annotation.ComponentScan;
 public class AtlassianConnectForgeContainerAutoConfiguration {
 
   /**
-   * Registers {@link ContainerAuthorizationFilter} ahead of Spring Security
-   * ({@code SecurityProperties.Filter.DEFAULT_ORDER = -100}). Running before the security chain
-   * means the filter seeds {@code SecurityContextHolder} with {@code ForgeAuthentication} before
-   * {@code AuthorizationFilter} evaluates {@code anyRequest().authenticated()}; otherwise Spring
-   * Security rejects every non-public path with 403.
+   * Exposes {@link ContainerAuthorizationFilter} as a Spring bean so {@code
+   * ContainerWebSecurityConfiguration} can insert it inside the Spring Security chain via {@code
+   * addFilterAfter(SecurityContextHolderFilter.class)}. The filter must run <strong>after</strong>
+   * Spring Security's {@code SecurityContextHolderFilter} — otherwise the latter loads a deferred
+   * {@code SecurityContext} from the (null) repository on a stateless request and overwrites the
+   * authentication this filter installed.
+   */
+  @Bean
+  ContainerAuthorizationFilter containerAuthorizationFilter(
+      ForgeContextService forgeContextService) {
+    return new ContainerAuthorizationFilter(forgeContextService);
+  }
+
+  /**
+   * Disables Spring Boot's default servlet-container registration for {@link
+   * ContainerAuthorizationFilter}; the filter participates in the Spring Security chain only.
    */
   @Bean
   FilterRegistrationBean<ContainerAuthorizationFilter> containerAuthorizationFilterRegistration(
-      ForgeContextService forgeContextService) {
-    var registration =
-        new FilterRegistrationBean<>(new ContainerAuthorizationFilter(forgeContextService));
-    registration.setOrder(-150);
+      ContainerAuthorizationFilter filter) {
+    var registration = new FilterRegistrationBean<>(filter);
+    registration.setEnabled(false);
     return registration;
   }
 }

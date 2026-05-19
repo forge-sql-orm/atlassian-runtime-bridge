@@ -23,8 +23,11 @@ public final class ContainersTestFixtures {
     return host;
   }
 
-  public static AtlassianHostUser hostUser(String cloudId, String installationId, String accountId) {
-    return AtlassianHostUser.builder(host(cloudId, installationId)).withUserAccountId(accountId).build();
+  public static AtlassianHostUser hostUser(
+      String cloudId, String installationId, String accountId) {
+    return AtlassianHostUser.builder(host(cloudId, installationId))
+        .withUserAccountId(accountId)
+        .build();
   }
 
   public static ForgeAuthentication forgeAuthentication(AtlassianHostUser user) {
@@ -32,7 +35,8 @@ public final class ContainersTestFixtures {
     ForgeApp app = new ForgeApp();
     app.setInstallationId(user.getHost().getInstallationId());
     token.setApp(app);
-    return new ForgeAuthentication(new ForgeApiContext(token, Optional.empty(), Optional.empty()), user);
+    return new ForgeAuthentication(
+        new ForgeApiContext(token, Optional.empty(), Optional.empty()), user);
   }
 
   public static ForgeAuthentication forgeAuthentication(AtlassianHost host) {

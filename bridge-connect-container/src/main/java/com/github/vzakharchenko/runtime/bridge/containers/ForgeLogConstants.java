@@ -1,8 +1,6 @@
 package com.github.vzakharchenko.runtime.bridge.containers;
 
-/**
- * Structured logging keys for Forge Container invocations (Developer Console log filtering).
- */
+/** Structured logging keys for Forge Container invocations (Developer Console log filtering). */
 public final class ForgeLogConstants {
 
   /**

@@ -46,18 +46,21 @@ class ManualAuthorizationServiceImplTest {
   void authorize_withoutAccountId_doesNotSetUserAccountId() {
     service.authorize(CLOUD_A, INSTALLATION, Optional.empty());
 
-    var user = (AtlassianHostUser) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+    var user =
+        (AtlassianHostUser) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
     assertThat(user.getUserAccountId()).isEmpty();
   }
 
   @Test
   void authorize_withForgeHostUser_updatesAccountIdWhenPresent() {
     var existing = ContainersTestFixtures.hostUser(CLOUD_A, INSTALLATION, "old-account");
-    SecurityContextHolder.getContext().setAuthentication(ContainersTestFixtures.forgeAuthentication(existing));
+    SecurityContextHolder.getContext()
+        .setAuthentication(ContainersTestFixtures.forgeAuthentication(existing));
 
     service.authorize(CLOUD_A, INSTALLATION, Optional.of("new-account"));
 
-    var user = (AtlassianHostUser) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+    var user =
+        (AtlassianHostUser) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
     assertThat(user.getUserAccountId()).contains("new-account");
     assertThat(user.getHost().getCloudId()).isEqualTo(CLOUD_A);
   }
@@ -65,7 +68,8 @@ class ManualAuthorizationServiceImplTest {
   @Test
   void authorize_withForgeHostUser_crossTenantFailsWithDetails() {
     var existing = ContainersTestFixtures.hostUser(CLOUD_A, INSTALLATION, "account");
-    SecurityContextHolder.getContext().setAuthentication(ContainersTestFixtures.forgeAuthentication(existing));
+    SecurityContextHolder.getContext()
+        .setAuthentication(ContainersTestFixtures.forgeAuthentication(existing));
 
     assertThatThrownBy(() -> service.authorize(CLOUD_B, INSTALLATION, Optional.empty()))
         .isInstanceOf(IllegalStateException.class)
@@ -76,22 +80,26 @@ class ManualAuthorizationServiceImplTest {
   @Test
   void authorize_atlassianHost_preservesHostUserAccountWhenPrincipalIsHostUser() {
     var hostUser = ContainersTestFixtures.hostUser(CLOUD_A, INSTALLATION, "account");
-    SecurityContextHolder.getContext().setAuthentication(ContainersTestFixtures.forgeAuthentication(hostUser));
+    SecurityContextHolder.getContext()
+        .setAuthentication(ContainersTestFixtures.forgeAuthentication(hostUser));
 
     service.authorize(ContainersTestFixtures.host(CLOUD_A, INSTALLATION));
 
-    var user = (AtlassianHostUser) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+    var user =
+        (AtlassianHostUser) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
     assertThat(user.getUserAccountId()).contains("account");
   }
 
   @Test
   void authorize_atlassianHostUser_delegatesToCloudInstallationAndAccount() {
     var hostUser = ContainersTestFixtures.hostUser(CLOUD_A, INSTALLATION, "account-99");
-    SecurityContextHolder.getContext().setAuthentication(ContainersTestFixtures.forgeAuthentication(hostUser));
+    SecurityContextHolder.getContext()
+        .setAuthentication(ContainersTestFixtures.forgeAuthentication(hostUser));
 
     service.authorize(hostUser);
 
-    var user = (AtlassianHostUser) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+    var user =
+        (AtlassianHostUser) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
     assertThat(user.getUserAccountId()).contains("account-99");
   }
 }

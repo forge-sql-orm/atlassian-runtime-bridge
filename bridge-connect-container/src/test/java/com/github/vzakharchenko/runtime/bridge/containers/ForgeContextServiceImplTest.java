@@ -42,7 +42,8 @@ class ForgeContextServiceImplTest {
     when(egressClientService.getInvocationContext(INVOCATION_ID))
         .thenReturn(ResponseEntity.ok(body));
 
-    Optional<ForgeAuthentication> authentication = service.emulateForgeAuthentication(INVOCATION_ID);
+    Optional<ForgeAuthentication> authentication =
+        service.emulateForgeAuthentication(INVOCATION_ID);
 
     assertThat(authentication).isPresent();
     var user = (AtlassianHostUser) authentication.get().getPrincipal();
@@ -55,11 +56,13 @@ class ForgeContextServiceImplTest {
   @Test
   void emulateForgeAuthentication_withoutAccountId_omitsUserAccountId() {
     var body =
-        ContainersTestFixtures.invocationContextJson(objectMapper, CLOUD_ID, INSTALLATION_ARI, null);
+        ContainersTestFixtures.invocationContextJson(
+            objectMapper, CLOUD_ID, INSTALLATION_ARI, null);
     when(egressClientService.getInvocationContext(INVOCATION_ID))
         .thenReturn(ResponseEntity.ok(body));
 
-    Optional<ForgeAuthentication> authentication = service.emulateForgeAuthentication(INVOCATION_ID);
+    Optional<ForgeAuthentication> authentication =
+        service.emulateForgeAuthentication(INVOCATION_ID);
 
     assertThat(authentication).isPresent();
     var user = (AtlassianHostUser) authentication.get().getPrincipal();
@@ -81,7 +84,8 @@ class ForgeContextServiceImplTest {
     when(egressClientService.getInvocationContext(INVOCATION_ID))
         .thenReturn(ResponseEntity.ok(TextNode.valueOf("not-json-object")));
 
-    Optional<ForgeAuthentication> authentication = service.emulateForgeAuthentication(INVOCATION_ID);
+    Optional<ForgeAuthentication> authentication =
+        service.emulateForgeAuthentication(INVOCATION_ID);
 
     assertThat(authentication).isPresent();
     assertThat(authentication.get().getPrincipal()).isNull();

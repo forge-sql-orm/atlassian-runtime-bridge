@@ -15,8 +15,8 @@ import org.springframework.stereotype.Service;
 /**
  * Container implementation of {@link ManualAuthorizationService}: seeds {@link
  * SecurityContextHolder} with {@link ForgeAuthentication} so shared controllers (e.g. {@code
- * /api/impersonation}) can call {@link com.github.vzakharchenko.runtime.bridge.common.JiraProductAdapter}
- * without Connect iframe JWT.
+ * /api/impersonation}) can call {@link
+ * com.github.vzakharchenko.runtime.bridge.common.JiraProductAdapter} without Connect iframe JWT.
  *
  * <p>When a {@link ForgeAuthentication} is already present, {@code cloudId} must match the context
  * host (cross-tenant calls are rejected). {@link AtlassianHostUser#withUserAccountId} is applied
@@ -46,8 +46,7 @@ public class ManualAuthorizationServiceImpl implements ManualAuthorizationServic
         assertSameCloud(host.getCloudId(), atlassianHost.getCloudId());
       }
     }
-    authorize(
-        atlassianHost.getCloudId(), atlassianHost.getInstallationId(), Optional.empty());
+    authorize(atlassianHost.getCloudId(), atlassianHost.getInstallationId(), Optional.empty());
   }
 
   @Override

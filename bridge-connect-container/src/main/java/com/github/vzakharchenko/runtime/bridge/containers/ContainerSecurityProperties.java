@@ -12,14 +12,13 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 @ConfigurationProperties(prefix = "bridge.container.security")
 public class ContainerSecurityProperties {
 
-  private List<String> publicPaths =
-      List.of( "/health");
+  private List<String> publicPaths = List.of("/health");
 
   public List<String> getPublicPaths() {
     return publicPaths;
   }
 
   public void setPublicPaths(List<String> publicPaths) {
-    this.publicPaths = publicPaths;
+    this.publicPaths = List.copyOf(publicPaths);
   }
 }

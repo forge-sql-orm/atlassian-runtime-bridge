@@ -3,7 +3,9 @@ package com.github.vzakharchenko.runtime.bridge.containers;
 /**
  * HTTP headers added by the Forge platform to inbound requests to a containerised service.
  *
- * @see <a href="https://developer.atlassian.com/platform/forge/containers-reference/ref-api/">Containers API contract</a>
+ * @see <a
+ *     href="https://developer.atlassian.com/platform/forge/containers-reference/ref-api/">Containers
+ *     API contract</a>
  */
 public final class ForgeIngressHeaders {
 

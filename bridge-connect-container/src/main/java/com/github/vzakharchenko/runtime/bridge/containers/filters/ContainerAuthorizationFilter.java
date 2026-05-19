@@ -17,18 +17,23 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 /**
- * Ingress filter for Forge Container requests: when {@link ForgeIngressHeaders#INVOCATION_ID} is
- * present, loads {@link ForgeAuthentication} via {@link ForgeContextService} and installs it for
- * the remainder of the filter chain.
+ * Ingress filter for Forge Container requests: when {@code x-forge-invocation-id} is present, loads
+ * {@link ForgeAuthentication} via {@link ForgeContextService} and installs it on {@code
+ * SecurityContextHolder} for the remainder of the filter chain.
  *
- * <p>The security context is always cleared in a {@code finally} block so thread-local state does
- * not leak across requests.
+ * <p>Inserted inside Spring Security's filter chain by {@code ContainerWebSecurityConfiguration}
+ * via {@code addFilterAfter(SecurityContextHolderFilter.class)}. The placement is intentional —
+ * running before {@code SecurityContextHolderFilter} (or entirely outside the security chain as a
+ * {@code FilterRegistrationBean}) lets that filter load a deferred empty {@code SecurityContext}
+ * from the stateless repository and overwrite whatever this filter installed, after which {@code
+ * AuthorizationFilter} rejects non-public paths with 403. Cleanup of the security context is
+ * delegated to {@code SecurityContextHolderFilter}, which clears it in its own {@code finally}
+ * block at the end of the request.
  *
- * <p>Registered as a {@code FilterRegistrationBean} with order {@code -150} in {@link
- * com.github.vzakharchenko.runtime.bridge.containers.AtlassianConnectForgeContainerAutoConfiguration}
- * so it runs <strong>before</strong> Spring Security's {@code FilterChainProxy} (order {@code
- * -100}). Without this ordering, {@code AuthorizationFilter} would reject every non-public path
- * with 403 before this filter could seed {@code SecurityContextHolder}.
+ * <p>Spring Boot's default servlet-container registration is suppressed by a disabled {@code
+ * FilterRegistrationBean} in {@link
+ * com.github.vzakharchenko.runtime.bridge.containers.AtlassianConnectForgeContainerAutoConfiguration};
+ * the filter participates in the Spring Security chain only.
  */
 public class ContainerAuthorizationFilter extends OncePerRequestFilter {
 
@@ -62,8 +67,6 @@ public class ContainerAuthorizationFilter extends OncePerRequestFilter {
     } catch (Exception e) {
       log.error("Failed to set up Forge authentication", e);
       throw new AccessDeniedException("Failed to set up Forge authentication", e);
-    } finally {
-      SecurityContextHolder.clearContext();
     }
   }
 }

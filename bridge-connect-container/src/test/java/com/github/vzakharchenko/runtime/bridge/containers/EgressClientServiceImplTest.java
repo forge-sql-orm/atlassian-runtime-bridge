@@ -79,8 +79,7 @@ class EgressClientServiceImplTest {
             MockRestRequestMatchers.header(
                 ForgeEgressHeaders.FORGE_AUTHORIZATION, "Forge id=inv-123"))
         .andRespond(
-            MockRestResponseCreators.withSuccess(
-                body.toString(), MediaType.APPLICATION_JSON));
+            MockRestResponseCreators.withSuccess(body.toString(), MediaType.APPLICATION_JSON));
 
     var response = service.getInvocationContext("inv-123");
 
@@ -93,16 +92,14 @@ class EgressClientServiceImplTest {
     ObjectNode body = new ObjectMapper().createObjectNode().put("id", "1");
     mockServer
         .expect(
-            MockRestRequestMatchers.requestTo(
-                "http://egress-proxy:7072/jira/rest/api/3/myself"))
+            MockRestRequestMatchers.requestTo("http://egress-proxy:7072/jira/rest/api/3/myself"))
         .andExpect(MockRestRequestMatchers.method(HttpMethod.GET))
         .andExpect(
             MockRestRequestMatchers.header(
                 ForgeEgressHeaders.FORGE_AUTHORIZATION,
                 "Forge installationId=inst-1,as=user,accountId=acc-1"))
         .andRespond(
-            MockRestResponseCreators.withSuccess(
-                body.toString(), MediaType.APPLICATION_JSON));
+            MockRestResponseCreators.withSuccess(body.toString(), MediaType.APPLICATION_JSON));
 
     var response =
         service.sendJiraRequest(
@@ -129,7 +126,8 @@ class EgressClientServiceImplTest {
 
   @Test
   void jiraTemplateRequest_usesJiraBaseUrlForRelativePaths() {
-    RestTemplate template = service.jiraTemplateRequest(InstallationAuth.asApp(INSTALLATION_ID + "-1"));
+    RestTemplate template =
+        service.jiraTemplateRequest(InstallationAuth.asApp(INSTALLATION_ID + "-1"));
     var handler = template.getUriTemplateHandler();
 
     assertThat(handler.expand("/rest/api/3/myself").toString())

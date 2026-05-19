@@ -45,7 +45,8 @@ class JiraProductAdapterImplTest {
   @Test
   void authenticatedAsAddon_usesAppInstallationAuth() {
     var user = ContainersTestFixtures.hostUser(CLOUD_ID, INSTALLATION, "acc");
-    SecurityContextHolder.getContext().setAuthentication(ContainersTestFixtures.forgeAuthentication(user));
+    SecurityContextHolder.getContext()
+        .setAuthentication(ContainersTestFixtures.forgeAuthentication(user));
     RestTemplate restTemplate = new RestTemplate();
     when(egressClientService.jiraTemplateRequest(any())).thenReturn(restTemplate);
 
@@ -59,7 +60,8 @@ class JiraProductAdapterImplTest {
   @Test
   void authenticatedAsCurrentUser_usesUserInstallationAuth() {
     var user = ContainersTestFixtures.hostUser(CLOUD_ID, INSTALLATION, "acc-1");
-    SecurityContextHolder.getContext().setAuthentication(ContainersTestFixtures.forgeAuthentication(user));
+    SecurityContextHolder.getContext()
+        .setAuthentication(ContainersTestFixtures.forgeAuthentication(user));
     when(egressClientService.jiraTemplateRequest(any())).thenReturn(new RestTemplate());
 
     adapter.authenticatedAsCurrentUser();

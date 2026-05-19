@@ -45,8 +45,6 @@ class InvocationIdLoggingFilterTest {
     var response = new MockHttpServletResponse();
 
     filter.doFilter(
-        request,
-        response,
-        (req, res) -> assertThat(MDC.get(INVOCATION_ID)).isEqualTo("inv-42"));
+        request, response, (req, res) -> assertThat(MDC.get(INVOCATION_ID)).isEqualTo("inv-42"));
   }
 }

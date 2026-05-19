@@ -8,7 +8,7 @@
     "prebuild": "npm install && shx mkdir -p target/classes/static ../forge-connect/customUI",
     "build:connect": "esbuild src/main/resources/javascript/main.ts --bundle --outfile=target/classes/static/bundle.js --format=iife --platform=browser --target=es2015 --legal-comments=none --alias:app-transport=./src/main/resources/javascript/connect.ts",
     "build:forge": "esbuild src/main/resources/javascript/forgeEntry.ts --bundle --outfile=../forge-connect/customUI/bundle.js --format=iife --platform=browser --target=es2015 --legal-comments=none --alias:app-transport=./src/main/resources/javascript/forge.ts && shx cp forge/index.html ../forge-connect/customUI/index.html",
-    "build:container": "esbuild src/main/resources/javascript/forgeEntry.ts --bundle --outfile=../forge-connect/customUI/bundle.js --format=iife --platform=browser --target=es2015 --legal-comments=none --alias:app-transport=./src/main/resources/javascript/container.ts && shx cp forge/index.html ../forge-container/customUI/index.html",
+    "build:container": "esbuild src/main/resources/javascript/forgeEntry.ts --bundle --outfile=../forge-container/customUI/bundle.js --format=iife --platform=browser --target=es2015 --legal-comments=none --alias:app-transport=./src/main/resources/javascript/container.ts && shx cp forge/index.html ../forge-container/customUI/index.html",
     "build": "npm run build:connect && npm run build:forge && npm run build:container",
     "watch": "esbuild src/main/resources/javascript/main.ts --bundle --outfile=target/classes/static/bundle.js --format=iife --platform=browser --target=es2015 --watch --alias:app-transport=./src/main/resources/javascript/connect.ts"
   },

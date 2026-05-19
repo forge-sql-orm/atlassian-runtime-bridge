@@ -12,9 +12,8 @@ import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Service;
 
 /**
- * Loads {@link AppContext} from {@link EgressClientService#getInvocationContext(String)} and
- * maps it to {@link ForgeAuthentication} with {@link AtlassianHostUser} when {@code cloudId} is
- * present.
+ * Loads {@link AppContext} from {@link EgressClientService#getInvocationContext(String)} and maps
+ * it to {@link ForgeAuthentication} with {@link AtlassianHostUser} when {@code cloudId} is present.
  */
 @Service
 public class ForgeContextServiceImpl implements ForgeContextService {
@@ -123,9 +122,7 @@ public class ForgeContextServiceImpl implements ForgeContextService {
     return Optional.of(host);
   }
 
-  /**
-   * Deserializes a {@link JsonNode} subtree; returns empty on parse failure (logged).
-   */
+  /** Deserializes a {@link JsonNode} subtree; returns empty on parse failure (logged). */
   public static <T> Optional<T> parseJsonNode(
       ObjectMapper objectMapper, JsonNode node, Class<T> tClass) {
     try {
