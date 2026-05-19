@@ -5,6 +5,7 @@
   "private": true,
   "scripts": {
     "typecheck": "tsc --noEmit",
+    "upgrade-deps": "ncu -u --dep prod,dev,peer && npm install",
     "prebuild": "npm install && shx mkdir -p target/classes/static ../forge-connect/customUI",
     "build:connect": "esbuild src/main/resources/javascript/main.ts --bundle --outfile=target/classes/static/bundle.js --format=iife --platform=browser --target=es2015 --legal-comments=none --alias:app-transport=./src/main/resources/javascript/connect.ts",
     "build:forge": "esbuild src/main/resources/javascript/forgeEntry.ts --bundle --outfile=../forge-connect/customUI/bundle.js --format=iife --platform=browser --target=es2015 --legal-comments=none --alias:app-transport=./src/main/resources/javascript/forge.ts && shx cp forge/index.html ../forge-connect/customUI/index.html",
@@ -13,15 +14,16 @@
     "watch": "esbuild src/main/resources/javascript/main.ts --bundle --outfile=target/classes/static/bundle.js --format=iife --platform=browser --target=es2015 --watch --alias:app-transport=./src/main/resources/javascript/connect.ts"
   },
   "dependencies": {
-    "@forge/bridge": "^5.16.0",
-    "react": "18.3.1",
-    "react-dom": "18.3.1",
-    "styled-components": "6.4.1"
+    "@forge/bridge": "^5.16.1",
+    "react": "19.2.6",
+    "react-dom": "19.2.6",
+    "styled-components": "6.4.2"
   },
   "devDependencies": {
-    "@types/react": "18.3.1",
-    "@types/react-dom": "18.3.1",
+    "@types/react": "19.2.15",
+    "@types/react-dom": "19.2.3",
     "esbuild": "^0.28.0",
+    "npm-check-updates": "^17.0.0",
     "shx": "^0.4.0",
     "typescript": "^6.0.3"
   }
