@@ -32,4 +32,5 @@ addon-db.script
 
 # Forge / npm sample build artefacts
 node_modules/
-customUI/
+customUI/bundle.js
+customUI/bundle.css

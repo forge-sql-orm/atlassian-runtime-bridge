@@ -17,6 +17,7 @@
     <modules>
         <module>bridge-common</module>
         <module>bridge-forge-connect</module>
+        <module>bridge-connect-container</module>
     </modules>
 
     <developers>
