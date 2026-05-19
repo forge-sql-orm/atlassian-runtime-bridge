@@ -7,6 +7,11 @@
         <version>1.0.1-SNAPSHOT</version>
     </parent>
     <artifactId>bridge-common</artifactId>
+
+    <name>bridge-common</name>
+    <description>Dependency-light API surface shared by the runtime modules: product-scoped HTTP entry points (JiraProductAdapter, ConfluenceProductAdapter, OtherProductAdapter), the ManualAuthorizationService interface, and the AtlassianHostContextEnricher extension point.</description>
+    <url>https://github.com/forge-sql-orm/atlassian-runtime-bridge</url>
+
     <dependencies>
         <dependency>
             <groupId>com.atlassian.connect</groupId>

@@ -10,6 +10,10 @@
 
     <artifactId>bridge-forge-connect</artifactId>
 
+    <name>bridge-forge-connect</name>
+    <description>Hybrid Connect + Forge Remote runtime: security bridge, servlet filter, GraphQL impersonation, Connect-vs-Forge select adapters, and optional Connect host-row lookup by installationId.</description>
+    <url>https://github.com/forge-sql-orm/atlassian-runtime-bridge</url>
+
     <dependencies>
         <dependency>
             <groupId>com.github.vzakharchenko</groupId>
