@@ -1,12 +1,9 @@
 # atlassian-runtime-bridge
 
-A Spring Boot runtime bridge for Atlassian apps that lets the **same application code** run across **Atlassian Connect**, **Forge Remote**, and **Forge Containers** — one backend, one set of product-API calls, three deployment targets.
-
-The bridge keeps your service layer talking to small Spring abstractions (`JiraProductAdapter`, `ConfluenceProductAdapter`, `OtherProductAdapter`, `ManualAuthorizationService`, …); the right transport — Connect JWT, Forge invocation token, or the Forge Containers egress sidecar — is picked at runtime from the active `SecurityContext`. That makes a Connect → Forge migration (or a hybrid period in between) a deployment change, not a rewrite.
-
-Built against **Atlassian Connect Spring Boot 6.x** and **Spring Boot 3.5.x** (see the root `pom.xml`).
-
 ![Maven Central Version](https://img.shields.io/maven-central/v/com.github.vzakharchenko/atlassian-runtime-bridge)
+![GitHub License](https://img.shields.io/github/license/forge-sql-orm/atlassian-runtime-bridge)
+![GitHub code size in bytes](https://img.shields.io/github/languages/code-size/forge-sql-orm/atlassian-runtime-bridge)
+![GitHub Release](https://img.shields.io/github/v/release/forge-sql-orm/atlassian-runtime-bridge)
 
 
 [![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=forge-sql-orm_atlassian-runtime-bridge&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=forge-sql-orm_atlassian-runtime-bridge)
@@ -16,6 +13,12 @@ Built against **Atlassian Connect Spring Boot 6.x** and **Spring Boot 3.5.x** (s
 
 [![Maintainability](https://qlty.sh/gh/forge-sql-orm/projects/atlassian-runtime-bridge/maintainability.svg)](https://qlty.sh/gh/forge-sql-orm/projects/atlassian-runtime-bridge)
 [![Code Coverage](https://qlty.sh/gh/forge-sql-orm/projects/atlassian-runtime-bridge/coverage.svg)](https://qlty.sh/gh/forge-sql-orm/projects/atlassian-runtime-bridge)
+
+A Spring Boot runtime bridge for Atlassian apps that lets the **same application code** run across **Atlassian Connect**, **Forge Remote**, and **Forge Containers** — one backend, one set of product-API calls, three deployment targets.
+
+The bridge keeps your service layer talking to small Spring abstractions (`JiraProductAdapter`, `ConfluenceProductAdapter`, `OtherProductAdapter`, `ManualAuthorizationService`, …); the right transport — Connect JWT, Forge invocation token, or the Forge Containers egress sidecar — is picked at runtime from the active `SecurityContext`. That makes a Connect → Forge migration (or a hybrid period in between) a deployment change, not a rewrite.
+
+Built against **Atlassian Connect Spring Boot 6.x** and **Spring Boot 3.5.x** (see the root `pom.xml`).
 
 ## Modules
 
