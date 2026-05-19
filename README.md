@@ -1,8 +1,10 @@
 # atlassian-runtime-bridge
 
-Spring Boot helpers for **hybrid Atlassian Connect + Forge** add-ons and for **Forge Containers**: one codebase can serve classic Connect iframe traffic, **Forge Remote**, or a **containerised** Spring service while reusing the same product-facing abstractions (`JiraProductAdapter`, `ManualAuthorizationService`, …).
+A Spring Boot runtime bridge for Atlassian apps that lets the **same application code** run across **Atlassian Connect**, **Forge Remote**, and **Forge Containers** — one backend, one set of product-API calls, three deployment targets.
 
-Built against **Atlassian Connect Spring Boot 6.x** and **Spring Boot 3.4.x** (see the root `pom.xml`).
+The bridge keeps your service layer talking to small Spring abstractions (`JiraProductAdapter`, `ConfluenceProductAdapter`, `OtherProductAdapter`, `ManualAuthorizationService`, …); the right transport — Connect JWT, Forge invocation token, or the Forge Containers egress sidecar — is picked at runtime from the active `SecurityContext`. That makes a Connect → Forge migration (or a hybrid period in between) a deployment change, not a rewrite.
+
+Built against **Atlassian Connect Spring Boot 6.x** and **Spring Boot 3.5.x** (see the root `pom.xml`).
 
 [![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=forge-sql-orm_atlassian-runtime-bridge&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=forge-sql-orm_atlassian-runtime-bridge)
 [![Bugs](https://sonarcloud.io/api/project_badges/measure?project=forge-sql-orm_atlassian-runtime-bridge&metric=bugs)](https://sonarcloud.io/summary/new_code?id=forge-sql-orm_atlassian-runtime-bridge)
