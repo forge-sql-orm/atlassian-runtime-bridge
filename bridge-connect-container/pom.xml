@@ -7,6 +7,10 @@
     </parent>
     <artifactId>bridge-connect-container</artifactId>
 
+    <name>bridge-connect-container</name>
+    <description>Forge Containers runtime: ingress filter for x-forge-invocation-id, egress sidecar client, container product adapters, and Connect/JPA auto-config suppression.</description>
+    <url>https://github.com/forge-sql-orm/atlassian-runtime-bridge</url>
+
     <dependencies>
         <dependency>
             <groupId>com.github.vzakharchenko</groupId>
