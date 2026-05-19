@@ -100,9 +100,37 @@ run_for_reactor() {
     "${VERSIONS_PLUGIN}:update-properties"
 }
 
+run_npm_upgrade_deps() {
+  local frontend_pom="${REPO_ROOT}/examples/atlassian-connect-forge-spring-boot-sample/frontend/pom.xml"
+  if [[ ! -f "$frontend_pom" ]]; then
+    echo "Skipping frontend npm upgrade — $frontend_pom not found"
+    return
+  fi
+  echo
+  echo "================================================================"
+  echo "  Frontend npm dependencies (sample-frontend)"
+  echo "  POM: $frontend_pom"
+  echo "================================================================"
+
+  if $DRY_RUN; then
+    echo "--- --dry-run: skipping frontend upgrade ---"
+    echo "    run without --dry-run, or invoke directly:"
+    echo "      mvn -f $frontend_pom \\"
+    echo "          com.github.eirslett:frontend-maven-plugin:npm@npm-upgrade-deps"
+    return
+  fi
+
+  echo "--- applying npm updates via frontend-maven-plugin ---"
+  # The plugin version is resolved from the frontend pom's <build><plugins> entry,
+  # so we don't have to repeat it on the CLI here.
+  mvn -f "$frontend_pom" -B -ntp \
+    com.github.eirslett:frontend-maven-plugin:npm@npm-upgrade-deps
+}
+
 run_for_reactor "$LIB_POM" "Library reactor"
 
 if ! $SKIP_EXAMPLES; then
+  run_npm_upgrade_deps
   run_for_reactor "$EXAMPLES_POM" "Examples reactor"
 fi
 
