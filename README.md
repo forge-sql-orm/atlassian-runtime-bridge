@@ -6,6 +6,9 @@ The bridge keeps your service layer talking to small Spring abstractions (`JiraP
 
 Built against **Atlassian Connect Spring Boot 6.x** and **Spring Boot 3.5.x** (see the root `pom.xml`).
 
+![Maven Central Version](https://img.shields.io/maven-central/v/com.github.vzakharchenko/atlassian-runtime-bridge)
+
+
 [![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=forge-sql-orm_atlassian-runtime-bridge&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=forge-sql-orm_atlassian-runtime-bridge)
 [![Bugs](https://sonarcloud.io/api/project_badges/measure?project=forge-sql-orm_atlassian-runtime-bridge&metric=bugs)](https://sonarcloud.io/summary/new_code?id=forge-sql-orm_atlassian-runtime-bridge)
 [![Code Smells](https://sonarcloud.io/api/project_badges/measure?project=forge-sql-orm_atlassian-runtime-bridge&metric=code_smells)](https://sonarcloud.io/summary/new_code?id=forge-sql-orm_atlassian-runtime-bridge)
@@ -37,7 +40,7 @@ Do not put **`bridge-forge-connect`** and **`bridge-connect-container`** on the 
 <dependency>
     <groupId>com.github.vzakharchenko</groupId>
     <artifactId>bridge-forge-connect</artifactId>
-    <version>1.0-SNAPSHOT</version>
+    <version>1.0.1</version>
 </dependency>
 ```
 
@@ -47,7 +50,7 @@ Do not put **`bridge-forge-connect`** and **`bridge-connect-container`** on the 
 <dependency>
     <groupId>com.github.vzakharchenko</groupId>
     <artifactId>bridge-connect-container</artifactId>
-    <version>1.0-SNAPSHOT</version>
+    <version>1.0.1</version>
 </dependency>
 ```
 
