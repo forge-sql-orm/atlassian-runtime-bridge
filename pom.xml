@@ -11,7 +11,7 @@
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
-        <version>3.4.13</version>
+        <version>3.5.14</version>
     </parent>
 
     <modules>
@@ -34,12 +34,12 @@
         <java.version>21</java.version>
         <!-- Explicit override: Spring Security 6.5.x fixes CVE-2026-22732, CVE-2026-22746, CVE-2026-22748;
              compatible with Spring Framework 6.2.x (verified by Spring Boot 3.5.x using both together) -->
-        <spring-security.version>6.5.3</spring-security.version>
+        <spring-security.version>6.5.10</spring-security.version>
         <error-prone.version>2.49.0</error-prone.version>
         <!-- Align all Atlassian Connect Spring Boot artifacts -->
-        <atlassian.connect.version>6.0.2</atlassian.connect.version>
-        <maven-checkstyle-plugin.version>3.5.0</maven-checkstyle-plugin.version>
-        <spotless-maven-plugin.version>2.44.5</spotless-maven-plugin.version>
+        <atlassian.connect.version>6.0.4</atlassian.connect.version>
+        <maven-checkstyle-plugin.version>3.6.0</maven-checkstyle-plugin.version>
+        <spotless-maven-plugin.version>2.46.1</spotless-maven-plugin.version>
         <google-java-format.version>1.27.0</google-java-format.version>
         <spotless.skip>false</spotless.skip>
         <spotbugs-maven-plugin.version>4.9.8.3</spotbugs-maven-plugin.version>
@@ -48,11 +48,11 @@
         <maven-pmd-plugin.version>3.28.0</maven-pmd-plugin.version>
         <pmd.skip>false</pmd.skip>
         <installGitHooks.skip>false</installGitHooks.skip>
-        <exec-maven-plugin.version>3.5.0</exec-maven-plugin.version>
+        <exec-maven-plugin.version>3.6.3</exec-maven-plugin.version>
         <jacoco.version>0.8.14</jacoco.version>
         <jacoco.minimum.line.covered.ratio>0.85</jacoco.minimum.line.covered.ratio>
         <!-- SonarScanner for Maven (profile sonar); https://central.sonatype.com/artifact/org.sonarsource.scanner.maven/sonar-maven-plugin -->
-        <sonar-maven-plugin.version>5.0.0.4389</sonar-maven-plugin.version>
+        <sonar-maven-plugin.version>5.6.0.6792</sonar-maven-plugin.version>
         <sonar.host.url>https://sonarcloud.io</sonar.host.url>
         <!-- Wildcard: modules without tests may have no report; Sonar picks existing files. -->
         <sonar.coverage.jacoco.xmlReportPaths>${maven.multiModuleProjectDirectory}/*/target/site/jacoco/jacoco.xml</sonar.coverage.jacoco.xmlReportPaths>
