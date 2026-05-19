@@ -298,6 +298,45 @@ Forge platform ──ingress──► your container :8080
 
 **`ManualAuthorizationService`** overloads match the hybrid module (`authorize(AtlassianHostUser)`, `authorize(AtlassianHost)`, `authorize(cloudId, installationId, accountId)`). Clear the security context after background tasks.
 
+### Reaching endpoints via webtrigger
+
+The container is not internet-routable — only Forge platform reaches it. To expose a backend route as a public URL (browser, cron, external system), declare a **`webtrigger`** module in `manifest.yml` pointing at an `endpoint` that maps to your Spring path:
+
+```yaml
+modules:
+  webtrigger:
+    - key: my-trigger
+      endpoint: my-trigger-ep
+  endpoint:
+    - key: my-trigger-ep
+      service: java-service
+      route:
+        path: /api/my-trigger      # your @GetMapping path
+```
+
+Then `forge webtrigger create -e <env>` returns a URL of the form `https://<app-id>.hello.atlassian-dev.net/x1/<webtrigger-token>` that Forge routes to that endpoint inside your container. The token authorizes the **URL**, not the caller — treat it as a capability URL and add caller-side controls when needed.
+
+Webtrigger requests do not carry a Connect iframe JWT. The recommended controller pattern is:
+
+```java
+@GetMapping("/api/my-trigger")
+@IgnoreJwt
+@ResponseBody
+public Map<String, String> myTrigger(
+    @RequestParam String accountId,
+    @RequestParam String cloudId,
+    @RequestParam String installationId) {
+
+  manualAuthorizationService.authorize(cloudId, installationId, Optional.of(accountId));
+  // select adapters now see a ForgeAuthentication with that AtlassianHostUser
+  return ...;
+}
+```
+
+`ManualAuthorizationService.authorize(...)` seeds `SecurityContextHolder` with a `ForgeAuthentication` so the **select adapters** (`JiraProductAdapter`, …) call the egress sidecar as that user without any further wiring. The same call also enforces **tenant isolation** — if a `ForgeAuthentication` is already in the context (e.g. you compose the trigger with another authenticated flow), the new `cloudId` must match the existing one, otherwise an `IllegalStateException("Cross tenant authorization is not allowed: …")` is thrown. This prevents a webtrigger URL minted for tenant A from being used to drive Jira calls against tenant B.
+
+End-to-end example with real URL shape, query parameters, and CLI commands: **[`forge-container/README.md` → Calling `/api/impersonation` via webtrigger](examples/atlassian-connect-forge-spring-boot-sample/forge-container/README.md#calling-apiimpersonation-via-webtrigger)**.
+
 ### Manifest and container image (sample)
 
 In **[`examples/.../forge-container/manifest.yml`](examples/atlassian-connect-forge-spring-boot-sample/forge-container/manifest.yml)**:
