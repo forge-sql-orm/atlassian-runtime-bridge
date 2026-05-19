@@ -9,6 +9,9 @@ Built against **Atlassian Connect Spring Boot 6.x** and **Spring Boot 3.4.x** (s
 [![Code Smells](https://sonarcloud.io/api/project_badges/measure?project=forge-sql-orm_atlassian-runtime-bridge&metric=code_smells)](https://sonarcloud.io/summary/new_code?id=forge-sql-orm_atlassian-runtime-bridge)
 [![Coverage](https://sonarcloud.io/api/project_badges/measure?project=forge-sql-orm_atlassian-runtime-bridge&metric=coverage)](https://sonarcloud.io/summary/new_code?id=forge-sql-orm_atlassian-runtime-bridge)
 
+[![Maintainability](https://qlty.sh/gh/forge-sql-orm/projects/atlassian-runtime-bridge/maintainability.svg)](https://qlty.sh/gh/forge-sql-orm/projects/atlassian-runtime-bridge)
+[![Code Coverage](https://qlty.sh/gh/forge-sql-orm/projects/atlassian-runtime-bridge/coverage.svg)](https://qlty.sh/gh/forge-sql-orm/projects/atlassian-runtime-bridge)
+
 ## Modules
 
 | Artifact | Role |

@@ -71,7 +71,8 @@ class ManualAuthorizationServiceImplTest {
     SecurityContextHolder.getContext()
         .setAuthentication(ContainersTestFixtures.forgeAuthentication(existing));
 
-    assertThatThrownBy(() -> service.authorize(CLOUD_B, INSTALLATION, Optional.empty()))
+    Optional<String> noAccount = Optional.empty();
+    assertThatThrownBy(() -> service.authorize(CLOUD_B, INSTALLATION, noAccount))
         .isInstanceOf(IllegalStateException.class)
         .hasMessageContaining("expected cloudId=" + CLOUD_A)
         .hasMessageContaining("received cloudId=" + CLOUD_B);

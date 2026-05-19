@@ -1,7 +1,7 @@
 package com.github.vzakharchenko.runtime.bridge.containers.filters;
 
 import static com.github.vzakharchenko.runtime.bridge.containers.ForgeIngressHeaders.INVOCATION_ID;
-import static org.springframework.util.StringUtils.isEmpty;
+import static org.springframework.util.StringUtils.hasText;
 
 import com.atlassian.connect.spring.internal.auth.frc.ForgeAuthentication;
 import com.github.vzakharchenko.runtime.bridge.containers.ForgeContextService;
@@ -52,7 +52,7 @@ public class ContainerAuthorizationFilter extends OncePerRequestFilter {
       @NonNull FilterChain filterChain) {
     try {
       String invocationId = request.getHeader(INVOCATION_ID);
-      if (isEmpty(invocationId)) {
+      if (!hasText(invocationId)) {
         filterChain.doFilter(request, response);
         return;
       }

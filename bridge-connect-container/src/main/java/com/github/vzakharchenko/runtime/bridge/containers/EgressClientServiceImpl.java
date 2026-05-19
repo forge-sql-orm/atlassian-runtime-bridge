@@ -34,9 +34,24 @@ public class EgressClientServiceImpl implements EgressClientService {
   /** {@code as=} value in {@code forge-proxy-authorization} for app- or user-scoped Jira calls. */
   public enum AuthType {
     /** Act as the installed app (system). */
-    app,
+    APP("app"),
     /** Act as a specific user ({@code accountId} required). */
-    user
+    USER("user");
+
+    private final String wireValue;
+
+    AuthType(String wireValue) {
+      this.wireValue = wireValue;
+    }
+
+    /**
+     * Lowercase token expected by the Forge egress sidecar in {@code as=…}; the enum name follows
+     * Java conventions, this preserves the wire format.
+     */
+    @Override
+    public String toString() {
+      return wireValue;
+    }
   }
 
   /**
@@ -57,11 +72,11 @@ public class EgressClientServiceImpl implements EgressClientService {
     }
 
     public static InstallationAuth asApp(final String installationId) {
-      return new InstallationAuth(installationId, AuthType.app, null);
+      return new InstallationAuth(installationId, AuthType.APP, null);
     }
 
     public static InstallationAuth asUser(final String installationId, final String accountId) {
-      return new InstallationAuth(installationId, AuthType.user, accountId);
+      return new InstallationAuth(installationId, AuthType.USER, accountId);
     }
   }
 

@@ -6,6 +6,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.atlassian.connect.spring.AtlassianHost;
 import com.atlassian.connect.spring.AtlassianHostUser;
 import com.github.vzakharchenko.runtime.bridge.containers.ContainersTestFixtures;
 import com.github.vzakharchenko.runtime.bridge.containers.EgressClientService;
@@ -92,7 +93,8 @@ class JiraProductAdapterImplTest {
         .setAuthentication(new UsernamePasswordAuthenticationToken("x", "y"));
 
     AtlassianHostUser user = ContainersTestFixtures.hostUser(CLOUD_ID, INSTALLATION, "acc");
-    assertThatThrownBy(() -> adapter.authenticatedAsAddon(user.getHost()))
+    AtlassianHost host = user.getHost();
+    assertThatThrownBy(() -> adapter.authenticatedAsAddon(host))
         .isInstanceOf(IllegalStateException.class)
         .hasMessageContaining("Not ForgeAuthentication");
   }

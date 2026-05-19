@@ -47,9 +47,9 @@ class EgressClientServiceImplTest {
     assertThat(InstallationAuth.installation(INSTALLATION_ID))
         .isEqualTo(new InstallationAuth(INSTALLATION_ID, null, null));
     assertThat(InstallationAuth.asApp(INSTALLATION_ID))
-        .isEqualTo(new InstallationAuth(INSTALLATION_ID, AuthType.app, null));
+        .isEqualTo(new InstallationAuth(INSTALLATION_ID, AuthType.APP, null));
     assertThat(InstallationAuth.asUser(INSTALLATION_ID, "acc"))
-        .isEqualTo(new InstallationAuth(INSTALLATION_ID, AuthType.user, "acc"));
+        .isEqualTo(new InstallationAuth(INSTALLATION_ID, AuthType.USER, "acc"));
   }
 
   @Test
@@ -130,7 +130,7 @@ class EgressClientServiceImplTest {
         service.jiraTemplateRequest(InstallationAuth.asApp(INSTALLATION_ID + "-1"));
     var handler = template.getUriTemplateHandler();
 
-    assertThat(handler.expand("/rest/api/3/myself").toString())
-        .isEqualTo("http://egress-proxy:7072/jira/rest/api/3/myself");
+    assertThat(handler.expand("/rest/api/3/myself"))
+        .hasToString("http://egress-proxy:7072/jira/rest/api/3/myself");
   }
 }
