@@ -32,11 +32,8 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <java.version>21</java.version>
-        <!-- Explicit override: Spring Security 6.5.x fixes CVE-2026-22732, CVE-2026-22746, CVE-2026-22748;
-             compatible with Spring Framework 6.2.x (verified by Spring Boot 3.5.x using both together) -->
         <spring-security.version>6.5.10</spring-security.version>
         <error-prone.version>2.49.0</error-prone.version>
-        <!-- Align all Atlassian Connect Spring Boot artifacts -->
         <atlassian.connect.version>6.0.4</atlassian.connect.version>
         <maven-checkstyle-plugin.version>3.6.0</maven-checkstyle-plugin.version>
         <spotless-maven-plugin.version>2.46.1</spotless-maven-plugin.version>

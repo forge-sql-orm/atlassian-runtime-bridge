@@ -7,21 +7,33 @@ import org.springframework.web.client.RestTemplate;
 /**
  * Product-scoped HTTP client for <strong>Confluence</strong> REST APIs.
  *
- * <p>Application code depends on this interface only. The Forge bridge module registers a {@code
- * com.github.vzakharchenko.runtime.bridge.forge.products.ConfluenceProductSelectAdapter} bean that
- * <strong>automatically</strong> delegates to Connect or Forge implementations according to the
- * active authentication (see {@code com.github.vzakharchenko.runtime.bridge.forge.products}).
+ * <p>Same select/route model as {@link JiraProductAdapter}: application code depends on the
+ * interface; the implementation comes from whichever runtime module is on the classpath ({@code
+ * bridge-forge-connect} for hybrid Connect / Forge Remote apps, {@code bridge-connect-container}
+ * for Forge Containers — exactly one of the two).
  */
 public interface ConfluenceProductAdapter {
-  /** Calls Confluence as the Connect add-on / Forge app installation (service identity). */
+
+  /**
+   * Returns a {@code RestTemplate} that authenticates as the Connect add-on / Forge app
+   * installation (service identity).
+   *
+   * @param host installation whose credentials/installation id back the request
+   */
   RestTemplate authenticatedAsAddon(AtlassianHost host);
 
-  /** Calls Confluence as the signed-in user in the host product. */
+  /**
+   * Returns a {@code RestTemplate} that authenticates as the signed-in user of the current request
+   * thread. Only valid inside a request that already carries a populated security context.
+   */
   RestTemplate authenticatedAsCurrentUser();
 
   /**
-   * Calls Confluence as a specific {@link AtlassianHostUser}. Forge path uses the same
-   * impersonation pipeline as other Forge product adapters.
+   * Returns a {@code RestTemplate} that acts as a specific {@link AtlassianHostUser}; the Forge
+   * path uses the same impersonation pipeline as {@link JiraProductAdapter#impersonation}.
+   *
+   * @param hostUser host + user identity to impersonate; {@code accountId} must be non-blank for
+   *     the user-scoped variant
    */
   RestTemplate impersonation(AtlassianHostUser hostUser);
 }

@@ -30,11 +30,7 @@ final class ContainerExcludedAutoConfigurations {
           "org.springframework.boot.autoconfigure.jdbc.JdbcTemplateAutoConfiguration",
           "org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration",
           "org.springframework.boot.autoconfigure.data.jpa.JpaRepositoriesAutoConfiguration",
-          "org.springframework.boot.autoconfigure.liquibase.LiquibaseAutoConfiguration",
-          // Unused in typical container deployments
-          "org.springframework.boot.autoconfigure.quartz.QuartzAutoConfiguration",
-          "org.springframework.boot.autoconfigure.data.redis.RedisAutoConfiguration",
-          "org.springframework.boot.autoconfigure.data.redis.RedisRepositoriesAutoConfiguration");
+          "org.springframework.boot.autoconfigure.liquibase.LiquibaseAutoConfiguration");
 
   private ContainerExcludedAutoConfigurations() {}
 

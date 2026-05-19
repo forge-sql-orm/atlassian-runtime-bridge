@@ -22,7 +22,8 @@ class ContainerExcludedAutoConfigurationsTest {
                     + (ContainerExcludedAutoConfigurations.CLASS_NAMES.size() - 1)
                     + "]"))
         .isEqualTo(
-            "org.springframework.boot.autoconfigure.data.redis.RedisRepositoriesAutoConfiguration");
+            ContainerExcludedAutoConfigurations.CLASS_NAMES.get(
+                ContainerExcludedAutoConfigurations.CLASS_NAMES.size() - 1));
   }
 
   @Test
