@@ -14,26 +14,140 @@
 [![Maintainability](https://qlty.sh/gh/forge-sql-orm/projects/atlassian-runtime-bridge/maintainability.svg)](https://qlty.sh/gh/forge-sql-orm/projects/atlassian-runtime-bridge)
 [![Code Coverage](https://qlty.sh/gh/forge-sql-orm/projects/atlassian-runtime-bridge/coverage.svg)](https://qlty.sh/gh/forge-sql-orm/projects/atlassian-runtime-bridge)
 
-A Spring Boot runtime bridge for Atlassian apps that lets the **same application code** run across **Atlassian Connect**, **Forge Remote**, and **Forge Containers** — one backend, one set of product-API calls, three deployment targets.
+**One Spring codebase** for Connect, Forge Remote, and Forge Containers — product APIs go through shared adapters (`JiraProductAdapter`, …); the bridge picks Connect JWT, Forge tokens, or the container egress sidecar from `SecurityContext`.
 
-The bridge keeps your service layer talking to small Spring abstractions (`JiraProductAdapter`, `ConfluenceProductAdapter`, `OtherProductAdapter`, `ManualAuthorizationService`, …); the right transport — Connect JWT, Forge invocation token, or the Forge Containers egress sidecar — is picked at runtime from the active `SecurityContext`. That makes a Connect → Forge migration (or a hybrid period in between) a deployment change, not a rewrite.
+| You are building… | Maven artifact | Sample module |
+|-------------------|----------------|---------------|
+| Connect iframe **and/or** Forge Remote (hybrid or migrated) | [`bridge-forge-connect`](#maven-coordinates) | [`forge-connect/`](examples/atlassian-connect-forge-spring-boot-sample/forge-connect/) → then [`forge-remote/`](examples/atlassian-connect-forge-spring-boot-sample/forge-remote/) |
+| Forge Containers (isolated cloud) | [`bridge-connect-container`](#forge-containers-bridge-connect-container) | [`forge-container/`](examples/atlassian-connect-forge-spring-boot-sample/forge-container/) |
 
-Built against **Atlassian Connect Spring Boot 6.x** and **Spring Boot 3.5.x** (see the root `pom.xml`).
+**Working end-to-end example** (Connect + Forge Remote + Containers in one repo): **[`examples/atlassian-connect-forge-spring-boot-sample`](examples/atlassian-connect-forge-spring-boot-sample/)** — see its [README](examples/atlassian-connect-forge-spring-boot-sample/README.md) for install/run.
+
+Do **not** put `bridge-forge-connect` and `bridge-connect-container` on the same classpath.
+
+Built against **Atlassian Connect Spring Boot 6.x** and **Spring Boot 3.5.x** (root `pom.xml`).
+
+---
+
+## Migration: Connect → Forge Remote
+
+Target manifest shape: [`forge-remote/manifest.yml`](examples/atlassian-connect-forge-spring-boot-sample/forge-remote/manifest.yml) (Forge modules only, no `connectModules`). Hybrid stepping stone: [`forge-connect/manifest.yml`](examples/atlassian-connect-forge-spring-boot-sample/forge-connect/manifest.yml).
+
+### 1. Tenant keys: `cloudId` instead of `clientKey`
+
+Move **your** persistence off `AtlassianHost.clientKey`:
+
+- Internal entities and repositories should use **`cloudId`** as the tenant key.
+- There must be **no FK or JPA relation** from your tables to Connect’s `AtlassianHost` entity — that table is Connect lifecycle metadata, not your domain model.
+
+**Transitional pattern** (while some sites still exist only on native Connect):
+
+| Column / lookup | Purpose |
+|-----------------|--------|
+| `cloudId` | Primary tenant id going forward |
+| `clientKey` | Legacy id during migration only |
+
+Lookup order: **`cloudId` first**, then **`clientKey`** if missing (for the rare native-Connect-only installs). A small mapping table `(cloud_id, client_key, installation_id)` is enough; drop `client_key` from app queries once all tenants are on Forge.
+
+The bridge can still **read** Connect’s host row via `installationId` for hybrid enrichment ([`ConnectOnForgeContext`](#built-in-connect-row-by-installationid)) — that is separate from your entity model.
+
+### 2. Add `bridge-forge-connect`
+
+```xml
+<dependency>
+    <groupId>com.github.vzakharchenko</groupId>
+    <artifactId>bridge-forge-connect</artifactId>
+    <version>1.0.1</version>
+</dependency>
+```
+
+Keep Connect starters on the classpath during hybrid; use `@SpringBootApplication` only — the bridge loads from `AutoConfiguration.imports` ([details](#enabling-the-bridge-in-your-spring-boot-app-hybrid--forge-remote)). Set **`app.id`** to the Forge manifest `app.id`.
+
+Refactor services to call **`JiraProductAdapter`** / **`ManualAuthorizationService`** instead of branching on Connect vs Forge.
+
+### 3. Two frontend builds (Connect iframe vs Forge Custom UI)
+
+Ship **two bundles** (or one repo with a **platform alias** — same idea as [this community post](https://community.developer.atlassian.com/t/disable-forge-tunnel/96807/10?u=vzakharchenko)):
+
+- **Connect** — iframe / `AP.request` transport.
+- **Forge** — Custom UI + `@forge/bridge` transport.
+
+The sample uses **esbuild aliases** (`app-transport` → `connect.ts` | `forge.ts` | `container.ts`):
+
+```json
+"build:connect": "esbuild ... --alias:app-transport=./.../connect.ts",
+"build:forge": "esbuild ... --alias:app-transport=./.../forge.ts"
+```
+
+See [`frontend/package.json`](examples/atlassian-connect-forge-spring-boot-sample/frontend/package.json). Output: Connect `bundle.js` on the classpath; Forge `customUI/` for `forge deploy` (see [`forge-remote/manifest.yml`](examples/atlassian-connect-forge-spring-boot-sample/forge-remote/manifest.yml) `resources`).
+
+### 4. Forge manifest: add Forge modules, remove Connect modules
+
+In the manifest you deploy:
+
+- **Add** Forge `modules` (`jira:globalPage`, `endpoint`, `scheduledTrigger`, `trigger`, `remotes`, …) pointing at your Spring **`baseUrl`**.
+- **Remove** `connectModules` (lifecycle, `generalPages`, …) when you no longer serve Connect UI from the descriptor.
+
+Compare hybrid vs Forge-only in the sample:
+
+| | Hybrid | Forge Remote |
+|---|--------|--------------|
+| Manifest | [`forge-connect/manifest.yml`](examples/atlassian-connect-forge-spring-boot-sample/forge-connect/manifest.yml) | [`forge-remote/manifest.yml`](examples/atlassian-connect-forge-spring-boot-sample/forge-remote/manifest.yml) |
+| `connectModules` | Present | **Absent** |
+| `app.connect.remote` | `connect` | `forge-remote` |
+
+### 5. Deploy and cut over
+
+1. `mvn clean install` (builds frontend + Spring).
+2. Run Spring from **`forge-connect/`** (same JVM serves both transports until Connect UI is retired).
+3. `forge deploy` from **`forge-remote/`** when ready; `forge install --upgrade`.
+4. Retire Connect iframe traffic; you are on **Forge Remote**.
+
+---
+
+## Migration: Forge Remote → Forge Containers
+
+Harder path — only after **Forge Remote** works. Target: [`forge-container/manifest.yml`](examples/atlassian-connect-forge-spring-boot-sample/forge-container/manifest.yml) (`services`, container image, egress sidecar). Runbook: [`forge-container/README.md`](examples/atlassian-connect-forge-spring-boot-sample/forge-container/README.md).
+
+### 1. Complete Connect → Forge Remote first
+
+Containers assume Forge invocation context and platform routing, not Connect iframe JWT + public `remotes.baseUrl` as the primary runtime.
+
+### 2. Swap the bridge module
+
+| Remove | Add |
+|--------|-----|
+| `bridge-forge-connect` | `bridge-connect-container` |
+
+Separate Spring module or profile: **`forge-container/`** in the sample. Entry point scans container auto-config only ([`AddonApplication`](examples/atlassian-connect-forge-spring-boot-sample/forge-container/src/main/java/sample/connect/spring/atlaskit/AddonApplication.java)).
+
+### 3. Replace the data layer
+
+Forge Containers run in **isolated cloud** — no Connect JPA host table on the classpath (auto-excluded). Migrate persistence off **Hibernate/JDBC** to platform storage, for example:
+
+- [Forge SQL](https://developer.atlassian.com/platform/forge/storage-reference/sql/) (HTTP SQL API), or
+- Forge **KVS** / other Forge storage modules.
+
+Tenant identity remains **`cloudId`** / **`installationId`** from invocation context or webtrigger query params — not `clientKey`.
+
+### 4. Container image, manifest, deploy
+
+1. `forge containers create -k <container-key>` (sample: `java-service`).
+2. Build Custom UI: `npm run build:container` → `forge-container/customUI/`.
+3. Docker image from repo root → push to Forge ECR → `forge variables set TAG` → `forge deploy`.
+4. Local loop: Spring on host + proxy sidecar + `forge tunnel` ([`dev-loop.sh`](examples/atlassian-connect-forge-spring-boot-sample/forge-container/dev-loop.sh)).
+
+You now run on **Forge Containers** and **isolated cloud**.
+
+---
 
 ## Modules
 
 | Artifact | Role |
 |----------|------|
-| **`bridge-common`** | Small, dependency-light API surface: product-scoped HTTP entry points (`JiraProductAdapter`, `ConfluenceProductAdapter`, `OtherProductAdapter`), `ManualAuthorizationService`, and `AtlassianHostContextEnricher` for enriching `AtlassianHost` built from Forge context. |
-| **`bridge-forge-connect`** | Depends on `bridge-common`. For **hybrid / Forge Remote** apps: security bridge, servlet filter, GraphQL impersonation, Connect-vs-Forge **select** adapters, optional JPA lookup by `installationId`, and related utilities. |
-| **`bridge-connect-container`** | Depends on `bridge-common`. For **Forge Containers** only: ingress filters (`x-forge-invocation-id`), egress sidecar client, container `JiraProductAdapter`, and Connect/JPA auto-config suppression. |
-
-| Deployment | Depend on |
-|------------|-----------|
-| Connect iframe and/or Forge Remote to your URL | **`bridge-forge-connect`** (pulls `bridge-common`) |
-| Spring JAR/image on **Forge Containers** | **`bridge-connect-container`** (pulls `bridge-common`) |
-
-Do not put **`bridge-forge-connect`** and **`bridge-connect-container`** on the same classpath — they target different runtimes.
+| **`bridge-common`** | Shared API: `JiraProductAdapter`, `ConfluenceProductAdapter`, `OtherProductAdapter`, `ManualAuthorizationService`, `AtlassianHostContextEnricher`. |
+| **`bridge-forge-connect`** | Hybrid / **Forge Remote**: security bridge, Forge filter, select adapters, optional Connect host lookup by `installationId`. |
+| **`bridge-connect-container`** | **Forge Containers**: ingress headers, egress sidecar, container Jira adapter; excludes Connect/JPA auto-config. |
 
 ## Maven coordinates
 
@@ -59,37 +173,39 @@ Do not put **`bridge-forge-connect`** and **`bridge-connect-container`** on the 
 
 You still need Atlassian Connect Spring Boot artifacts on the classpath where noted below (see the [sample](examples/atlassian-connect-forge-spring-boot-sample/) `pom.xml`). For **Connect-persisted host rows** in hybrid apps, add **`atlassian-connect-spring-boot-jpa-starter`** and a datasource — the forge bridge registers an extra repository only when Connect’s JPA auto-configuration is present (see [Connect host persistence](#connect-host-persistence-jpa)). **Container apps do not use JPA** — the container module excludes datasource/JPA auto-configurations automatically.
 
-## Enabling the bridge in your Spring Boot app (hybrid / Forge Remote)
+---
+
+## Library reference
+
+### Enabling the bridge in your Spring Boot app (hybrid / Forge Remote)
 
 1. Add the dependency above (plus Connect starter, JPA if you persist hosts/tokens, web, etc.).
-2. **Component-scan** the bridge packages. The library is not registered via `META-INF/spring/org.springframework.boot.autoconfigure.AutoConfiguration.imports`; you anchor scanning on `AtlassianConnectForgeAutoConfiguration` so all `com.github.vzakharchenko.runtime.bridge.*` beans load together with your app:
+2. Use a normal **`@SpringBootApplication`** in your app package. **`bridge-forge-connect`** registers via **`META-INF/spring/org.springframework.boot.autoconfigure.AutoConfiguration.imports`** — no mandatory `@ComponentScan` on the bridge.
 
 ```java
 @SpringBootApplication
-@ComponentScan(basePackageClasses = {
-        com.github.vzakharchenko.runtime.bridge.forge.AtlassianConnectForgeAutoConfiguration.class,
-        MyApplication.class
-})
 public class MyApplication { /* ... */ }
 ```
 
+Optional: anchor component scan on **`AtlassianConnectForgeAutoConfiguration`** if you want your application class in a different package than your controllers but still scan them together (do not scan the bridge class *in addition* to the auto-config import — that duplicates beans).
+
 3. Set **`app.id`** to your Forge manifest `app.id` (used when reconstructing `ForgeApp` metadata in `AtlassianForgeSecurityBridgeServiceImpl`).
 
-**`AtlassianConnectForgeAutoConfiguration`** keeps the stock Connect auto-configuration and adds:
+**`AtlassianConnectForgeAutoConfiguration`** (`@AutoConfigureAfter` Connect) keeps the stock Connect auto-configuration and adds:
 
 - **`AtlassianForgeFilter`** — runs after Forge auth and replaces `ForgeAuthentication` with one backed by a resolved `AtlassianHostUser` when possible.
 - **`graphqlClient`** — shared `RestClient` for `https://api.atlassian.com/graphql` (offline user token / impersonation).
 
-Component scan on `com.github.vzakharchenko.runtime.bridge.forge` also picks up **`AtlassianConnectForgeJpaAutoConfiguration`** when Connect’s JPA starter is on the classpath (separate class; see below).
+**`AtlassianConnectForgeJpaAutoConfiguration`** is a separate auto-configuration entry, active when Connect’s JPA starter is on the classpath (see below).
 
 ### Configuration classes
 
 | Class | When active | Role |
 |-------|-------------|------|
-| **`AtlassianConnectForgeAutoConfiguration`** | Always (once component-scanned) | Filter, GraphQL `RestClient`, bridge component scan. |
+| **`AtlassianConnectForgeAutoConfiguration`** | Always (via `AutoConfiguration.imports`) | Filter, GraphQL `RestClient`, bridge component scan. |
 | **`AtlassianConnectForgeJpaAutoConfiguration`** | Only if `com.atlassian.connect.spring.internal.jpa.AtlassianJpaAutoConfiguration` is on the classpath (Connect JPA starter) | Adds **`AtlassianHostByInstallationIdRepository`** via `@EnableJpaRepositories` **after** Connect’s own JPA config — no `@Primary`, no changes to `AtlassianHostRepository`. |
 
-## Calling Jira, Confluence, or generic product REST
+### Calling Jira, Confluence, or generic product REST
 
 Define dependencies on the **adapter interfaces** from `common` (`JiraProductAdapter`, …). The **forge** module registers **select** beans (`JiraProductSelectAdapter`, …) that:
 
@@ -98,7 +214,7 @@ Define dependencies on the **adapter interfaces** from `common` (`JiraProductAda
 
 So the same service layer can run in Connect-only, Forge-only, or hybrid deployments without branching on product type everywhere.
 
-## Security bridge and manual authorization
+### Security bridge and manual authorization
 
 **`AtlassianForgeSecurityBridgeService`** maps Forge invocation / persisted system tokens into the same `AtlassianHost`, `AtlassianHostUser`, and Spring `Authentication` types Connect Spring already uses, and can build `ForgeAuthentication` for programmatic use.
 
@@ -111,7 +227,7 @@ Typical pattern: run work on a thread with a clean or known context, call `autho
 - `authorize(AtlassianHostUser)` / `authorize(AtlassianHost)` when you already have full host objects.
 - `authorize(String cloudId, String installationId, Optional<String> accountId)` for a **minimal** host built from ids (non-null `cloudId` / `installationId`; optional non-blank account id for user-scoped REST). Populate extra host fields yourself if a given API needs them.
 
-## Host enrichment from Forge context
+### Host enrichment from Forge context
 
 When resolving an `AtlassianHost` from a live **`ForgeApiContext`**, **`AtlassianForgeSecurityBridgeServiceImpl`** builds a **minimal** host (`installationId`, `cloudId`, `clientKey`, `addonInstalled`) from the Forge invocation token, then runs every registered **`AtlassianHostContextEnricher<ForgeApiContext>`** in ascending **`order()`** (lower runs first).
 
@@ -200,7 +316,7 @@ Notes when subclassing:
 - **Persisting your subclass is your responsibility.** Connect Spring's `AtlassianHostRepository` stores the base `AtlassianHost` columns only — extra fields on your subclass live in memory unless you persist them yourself (separate table, your own JPA entity, cache, etc.).
 - **Downstream code reaches your fields via `(TenantAwareHost) hostUser.getHost()`** (or an `instanceof` pattern). The bridge's select adapters do not care about the concrete type — they only read the standard Connect fields.
 
-## Connect host persistence (JPA)
+### Connect host persistence (JPA)
 
 Connect’s **`AtlassianJpaAutoConfiguration`** already enables **`AtlassianHostRepository`**, **`AtlassianHostMappingRepository`**, and **`ForgeSystemAccessTokenRepository`**.
 
@@ -212,7 +328,7 @@ It is enabled by **`AtlassianConnectForgeJpaAutoConfiguration`**, which is condi
 
 **`ConnectOnForgeContext`** injects `Optional<AtlassianHostByInstallationIdRepository>`: if the bean is absent, enrichment from the host table is skipped.
 
-## Forge Containers (`bridge-connect-container`)
+### Forge Containers (`bridge-connect-container`)
 
 Use this module when your Spring Boot app runs **inside a Forge Container** (platform routes traffic to your image; Jira/Confluence REST goes through the **egress proxy sidecar**, not Connect host REST clients or a public `remotes.baseUrl`).
 
@@ -226,7 +342,7 @@ Official reference: [Forge Containers](https://developer.atlassian.com/platform/
 | Jira REST | Connect `AtlassianHostRestClients` or Forge `AtlassianForgeRestClients` (select adapters) | Always via egress proxy (`/jira/...`) |
 | Ingress auth | Connect JWT + `AtlassianForgeFilter` | `x-forge-invocation-id` → sidecar `/invocation/context` |
 | Connect JPA / host table | Optional enrichment | **Excluded** (no datasource) |
-| Spring registration | `@ComponentScan` on `AtlassianConnectForgeAutoConfiguration` | Boot **`AutoConfiguration.imports`** + environment post-processor |
+| Spring registration | Boot **`AutoConfiguration.imports`** | Boot **`AutoConfiguration.imports`** + environment post-processor |
 
 ### Enabling in your app
 
@@ -255,7 +371,7 @@ On startup, **`ContainerAutoConfigurationEnvironmentPostProcessor`** merges **`s
 | **`egress.proxy.url`** | `http://localhost:7072` | Base URL of the Forge **egress sidecar** (local docker-compose or platform-injected `FORGE_EGRESS_PROXY_URL` in cloud) |
 | **`FORGE_EGRESS_PROXY_URL`** | — | Often set in `application.yaml` as `${FORGE_EGRESS_PROXY_URL:http://localhost:7072}` (see [sample `application.yaml`](examples/atlassian-connect-forge-spring-boot-sample/forge-container/src/main/resources/application.yaml)) |
 | **`app.id`** | — | Forge manifest `app.id` when building `ForgeApp` metadata in manual authorization paths |
-/| **`bridge.container.security.public-paths`** | `[/health]` | List of request matchers (Ant patterns) exempt from `SecurityFilterChain` authentication. Override per app when health/liveness or other public endpoints differ from the default. Anything **not** listed requires an authenticated principal (typically set by `ContainerAuthorizationFilter`). |
+| **`bridge.container.security.public-paths`** | `[/health]` | Ant patterns exempt from HTTP security auth (health, etc.); other paths need `ContainerAuthorizationFilter` or manual auth |
 
 Example `application.yaml`:
 
@@ -334,11 +450,9 @@ Webtrigger requests do not carry a Connect iframe JWT. The recommended controlle
 @IgnoreJwt
 @ResponseBody
 public Map<String, String> myTrigger(
-    @RequestParam String accountId,
-    @RequestParam String cloudId,
-    @RequestParam String installationId) {
+    @RequestParam String accountId, @AuthenticationPrincipal AtlassianHostUser user) {
 
-  manualAuthorizationService.authorize(cloudId, installationId, Optional.of(accountId));
+  manualAuthorizationService.authorize(user.getHost().getCloudId(), user.getHost().getInstallationId(), Optional.of(accountId));
   // select adapters now see a ForgeAuthentication with that AtlassianHostUser
   return ...;
 }
@@ -358,19 +472,6 @@ In **[`examples/.../forge-container/manifest.yml`](examples/atlassian-connect-fo
 - Deployed image tag: Forge variable **`${TAG}`**
 
 See **[`forge-container/README.md`](examples/atlassian-connect-forge-spring-boot-sample/forge-container/README.md)** for register, Custom UI build, `dev-loop.sh`, and deploy.
-
-## Example project
-
-See **[examples/atlassian-connect-forge-spring-boot-sample](examples/atlassian-connect-forge-spring-boot-sample/)** and its **[README](examples/atlassian-connect-forge-spring-boot-sample/README.md)** for the multi-module layout:
-
-| Module | Bridge | Docs |
-|--------|--------|------|
-| **`forge-connect/`** | `bridge-forge-connect` | Hybrid Connect + Forge Custom UI |
-| **`forge-remote/`** | Same JVM as `forge-connect` | Forge-only manifest (post-migration) |
-| **`forge-container/`** | `bridge-connect-container` | **[`forge-container/README.md`](examples/atlassian-connect-forge-spring-boot-sample/forge-container/README.md)** — Containers EAP, sidecar, ECR deploy |
-| **`core/`**, **`frontend/`** | Shared business logic and Custom UI bundles | Parent README |
-
-**`forge-remote`** is the same Spring backend with Connect modules stripped from the manifest. **`forge-container`** is a separate Spring module (no Connect JPA, no `bridge-forge-connect`) built for the container image and egress proxy.
 
 ## Build
 

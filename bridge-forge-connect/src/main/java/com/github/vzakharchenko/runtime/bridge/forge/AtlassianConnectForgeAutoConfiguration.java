@@ -2,18 +2,25 @@ package com.github.vzakharchenko.runtime.bridge.forge;
 
 import com.atlassian.connect.spring.internal.AtlassianConnectAutoConfiguration;
 import com.atlassian.connect.spring.internal.AtlassianConnectProperties;
+import org.springframework.boot.autoconfigure.AutoConfiguration;
+import org.springframework.boot.autoconfigure.AutoConfigureAfter;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
-import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.FilterType;
 import org.springframework.retry.annotation.EnableRetry;
 import org.springframework.web.client.RestClient;
 
 /**
- * Auto-configuration for the <strong>Connect + Forge hybrid</strong> layout: full Connect {@link
- * AtlassianConnectAutoConfiguration} stays active while this class registers bridge beans
- * (component scan for {@code com.github.vzakharchenko.runtime.bridge.*}).
+ * Spring Boot auto-configuration for the <strong>Connect + Forge hybrid</strong> layout: Connect
+ * {@link AtlassianConnectAutoConfiguration} stays active while this class registers bridge beans.
+ *
+ * <p>Registered via {@code
+ * META-INF/spring/org.springframework.boot.autoconfigure.AutoConfiguration.imports}. Consumers only
+ * need the {@code bridge-forge-connect} dependency plus Connect starters; do not
+ * {@code @ComponentScan} this class (duplicate beans). Optional: anchor scan on this class only to
+ * co-locate your app package with the bridge (see README).
  *
  * <p>Declares:
  *
@@ -29,12 +36,21 @@ import org.springframework.web.client.RestClient;
  * Filter order uses {@link
  * com.atlassian.connect.spring.internal.AtlassianConnectProperties#getForgeFilterOrder()}.
  */
-@Configuration
+@AutoConfiguration
+@AutoConfigureAfter(AtlassianConnectAutoConfiguration.class)
 @EnableRetry
-@ComponentScan(basePackageClasses = {AtlassianConnectAutoConfiguration.class})
 @EnableConfigurationProperties(AtlassianConnectProperties.class)
+@ComponentScan(basePackageClasses = {AtlassianConnectAutoConfiguration.class})
 @ComponentScan("com.github.vzakharchenko.runtime.bridge.common")
-@ComponentScan("com.github.vzakharchenko.runtime.bridge.forge")
+@ComponentScan(
+    basePackages = "com.github.vzakharchenko.runtime.bridge.forge",
+    excludeFilters =
+        @ComponentScan.Filter(
+            type = FilterType.ASSIGNABLE_TYPE,
+            classes = {
+              AtlassianConnectForgeAutoConfiguration.class,
+              AtlassianConnectForgeJpaAutoConfiguration.class
+            }))
 public class AtlassianConnectForgeAutoConfiguration {
 
   public static final String API_ATLASSIAN_COM_GRAPHQL = "https://api.atlassian.com/graphql";

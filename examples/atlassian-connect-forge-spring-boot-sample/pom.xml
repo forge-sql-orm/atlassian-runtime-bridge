@@ -29,6 +29,7 @@
         <java.version>21</java.version>
         <atlassian-connect-spring-boot.version>6.0.2</atlassian-connect-spring-boot.version>
         <atlassian-runtime-bridge.version>1.0.1</atlassian-runtime-bridge.version>
+<!--        <atlassian-runtime-bridge.version>1.0.2-SNAPSHOT</atlassian-runtime-bridge.version>-->
         <!-- Override Spring Boot 3.5.14 default (10.1.54) to clear the Tomcat
              CVE batch Snyk reports against sample-core (HTTP/2 headers, Digest
              auth, WebDAV LOCK/PROPFIND, etc.); fixed in 10.1.55. -->
