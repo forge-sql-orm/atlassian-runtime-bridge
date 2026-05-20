@@ -1,0 +1,2 @@
+com.github.vzakharchenko.runtime.bridge.forge.AtlassianConnectForgeAutoConfiguration
+com.github.vzakharchenko.runtime.bridge.forge.AtlassianConnectForgeJpaAutoConfiguration

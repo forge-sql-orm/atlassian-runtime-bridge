@@ -1,23 +1,16 @@
 package sample.connect.spring.atlaskit;
 
-import com.github.vzakharchenko.runtime.bridge.forge.AtlassianConnectForgeAutoConfiguration;
 import org.springframework.boot.SpringApplication;
-import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.context.annotation.ComponentScan;
-import org.springframework.retry.annotation.EnableRetry;
 
 /**
  * Connect + Forge sample add-on entry point.
- * <p>
- * Component scanning is anchored on {@link AtlassianConnectForgeAutoConfiguration} so that
- * bridge beans under {@code com.github.vzakharchenko.runtime.bridge.*} are registered together
- * with this sample package.
+ *
+ * <p>{@code bridge-forge-connect} registers via Spring Boot {@code AutoConfiguration.imports}; no
+ * need to {@code @ComponentScan} the bridge. This class scans {@code sample.connect.spring.atlaskit}
+ * (including shared {@link BusinessLogicController} from {@code core}).
  */
 @SpringBootApplication
-@AutoConfiguration
-@EnableRetry
-@ComponentScan(basePackageClasses = {AtlassianConnectForgeAutoConfiguration.class, BusinessLogicController.class})
 public class AddonApplication {
 
     public static void main(String[] args) {
