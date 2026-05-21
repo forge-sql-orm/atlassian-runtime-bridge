@@ -4,8 +4,8 @@ title: "[Docs]: "
 labels: ["documentation", "triage"]
 body:
   - type: markdown
-    values:
-      - |
+    attributes:
+      value: |
         Documentation lives in the root [README](https://github.com/forge-sql-orm/atlassian-runtime-bridge#readme),
         [CONTRIBUTING.md](https://github.com/forge-sql-orm/atlassian-runtime-bridge/blob/main/CONTRIBUTING.md),
         and under `examples/atlassian-connect-forge-spring-boot-sample/`.
