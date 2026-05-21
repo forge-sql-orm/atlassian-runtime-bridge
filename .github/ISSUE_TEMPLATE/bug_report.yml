@@ -1,0 +1,98 @@
+name: Bug report
+description: Something is broken in the bridge libraries or the sample app
+title: "[Bug]: "
+labels: ["bug", "triage"]
+body:
+  - type: markdown
+    values:
+      - |
+        Thanks for reporting. Search [existing issues](https://github.com/forge-sql-orm/atlassian-runtime-bridge/issues) first.
+        **Security issues:** use [SECURITY.md](https://github.com/forge-sql-orm/atlassian-runtime-bridge/blob/main/SECURITY.md) — not this form.
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      description: Which part of the repo is affected?
+      options:
+        - bridge-common
+        - bridge-forge-connect (Connect / Forge Remote)
+        - bridge-connect-container (Forge Containers)
+        - Sample — forge-connect (hybrid)
+        - Sample — forge-remote
+        - Sample — forge-container
+        - Sample — frontend
+        - Other / unsure
+    validations:
+      required: true
+
+  - type: dropdown
+    id: runtime
+    attributes:
+      label: Runtime (if applicable)
+      description: How are you running the app when the bug appears?
+      options:
+        - Connect iframe (hybrid)
+        - Forge Remote
+        - Forge Containers
+        - Unit tests only (no live Forge/Jira)
+        - Not applicable
+    validations:
+      required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: Library or commit
+      description: Maven version (e.g. 1.0.2) or git commit SHA
+      placeholder: "1.0.2 or abc1234"
+    validations:
+      required: true
+
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: JDK, Maven, Spring Boot / Connect Spring Boot versions if known
+      placeholder: |
+        JDK 21, Maven 3.9.11
+        Spring Boot 3.5.x, atlassian-connect-spring-boot 6.x
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: Minimal steps, config snippets, or test case
+      placeholder: |
+        1. Add dependency …
+        2. Call JiraProductAdapter …
+        3. See error
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+      description: Include stack traces, HTTP status, log lines (redact secrets)
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Checklist
+      options:
+        - label: I removed tokens, shared secrets, and production URLs from this report
+          required: true
+        - label: I searched existing issues for duplicates
+          required: true

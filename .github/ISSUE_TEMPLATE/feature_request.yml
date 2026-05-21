@@ -1,0 +1,56 @@
+name: Feature request
+description: Suggest an enhancement to the bridge API or behavior
+title: "[Feature]: "
+labels: ["enhancement", "triage"]
+body:
+  - type: markdown
+    values:
+      - |
+        For large changes (new modules, breaking API), discuss here before opening a PR.
+        See [CONTRIBUTING.md](https://github.com/forge-sql-orm/atlassian-runtime-bridge/blob/main/CONTRIBUTING.md).
+
+  - type: dropdown
+    id: module
+    attributes:
+      label: Module
+      options:
+        - bridge-common
+        - bridge-forge-connect
+        - bridge-connect-container
+        - Sample app
+        - Documentation only
+    validations:
+      required: true
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem / use case
+      description: What migration or integration pain does this solve?
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed solution
+      description: API shape, behavior, or docs you would like
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: Workarounds you tried without the bridge change
+
+  - type: dropdown
+    id: breaking
+    attributes:
+      label: Breaking change?
+      options:
+        - "No"
+        - "Yes — acceptable with major version bump"
+        - "Unsure"
+    validations:
+      required: true

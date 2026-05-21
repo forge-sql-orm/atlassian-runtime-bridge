@@ -1,0 +1,11 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Security vulnerability
+    url: https://github.com/forge-sql-orm/atlassian-runtime-bridge/blob/main/SECURITY.md
+    about: Do not open a public issue — report privately per SECURITY.md
+  - name: Migration guide (README)
+    url: https://github.com/forge-sql-orm/atlassian-runtime-bridge#migration-connect--forge-remote
+    about: Connect → Forge Remote → Containers steps and sample manifests
+  - name: Contributing
+    url: https://github.com/forge-sql-orm/atlassian-runtime-bridge/blob/main/CONTRIBUTING.md
+    about: Build, tests, PR expectations, and code style
