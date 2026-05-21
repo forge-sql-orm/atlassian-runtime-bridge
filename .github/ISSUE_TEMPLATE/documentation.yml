@@ -1,0 +1,48 @@
+name: Documentation
+description: README, migration guide, Javadoc, or sample docs improvement
+title: "[Docs]: "
+labels: ["documentation", "triage"]
+body:
+  - type: markdown
+    values:
+      - |
+        Documentation lives in the root [README](https://github.com/forge-sql-orm/atlassian-runtime-bridge#readme),
+        [CONTRIBUTING.md](https://github.com/forge-sql-orm/atlassian-runtime-bridge/blob/main/CONTRIBUTING.md),
+        and under `examples/atlassian-connect-forge-spring-boot-sample/`.
+
+  - type: dropdown
+    id: doc_location
+    attributes:
+      label: Which docs?
+      options:
+        - Root README (migration / library reference)
+        - CONTRIBUTING / SECURITY
+        - forge-container README
+        - Sample parent README
+        - Javadoc in bridge modules
+        - Other
+    validations:
+      required: true
+
+  - type: textarea
+    id: issue
+    attributes:
+      label: What is unclear or missing?
+    validations:
+      required: true
+
+  - type: textarea
+    id: suggestion
+    attributes:
+      label: Suggested improvement
+      description: Outline, link, or draft text if you have one
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: pr
+    attributes:
+      label: Contribution
+      options:
+        - label: I am willing to open a PR for this documentation change
+          required: false

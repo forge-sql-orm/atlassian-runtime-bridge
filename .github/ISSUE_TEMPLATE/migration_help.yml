@@ -1,0 +1,69 @@
+name: Migration help
+description: Connect → Forge Remote or Forge Containers — questions about the migration path
+title: "[Migration]: "
+labels: ["question", "migration", "triage"]
+body:
+  - type: markdown
+    values:
+      - |
+        Start with the [README migration sections](https://github.com/forge-sql-orm/atlassian-runtime-bridge#migration-connect--forge-remote)
+        and the [sample app](https://github.com/forge-sql-orm/atlassian-runtime-bridge/tree/main/examples/atlassian-connect-forge-spring-boot-sample).
+        This template is for **how to migrate**, not for security reports or library bugs.
+
+  - type: dropdown
+    id: phase
+    attributes:
+      label: Migration phase
+      options:
+        - Planning — still on Connect, evaluating Forge
+        - Hybrid — Connect + Forge UI (forge-connect style)
+        - Cutting over to Forge Remote (no connectModules)
+        - Forge Remote → Forge Containers
+        - Already migrated — stuck on one step
+    validations:
+      required: true
+
+  - type: dropdown
+    id: stack
+    attributes:
+      label: Your stack
+      options:
+        - Spring Boot + Connect Spring Boot (JPA host table)
+        - Spring Boot + Connect Spring Boot (no JPA / custom tenancy)
+        - Other / mixed
+    validations:
+      required: true
+
+  - type: textarea
+    id: context
+    attributes:
+      label: Current setup
+      description: Manifest shape, bridge module in use, how you identify tenants (clientKey vs cloudId)
+      placeholder: |
+        - Using bridge-forge-connect 1.0.x
+        - Tenants keyed by clientKey in our tables — migrating to cloudId
+        - Deploying forge-remote manifest
+    validations:
+      required: true
+
+  - type: textarea
+    id: blocker
+    attributes:
+      label: Where are you stuck?
+      description: Specific step, error message, or design decision
+    validations:
+      required: true
+
+  - type: textarea
+    id: tried
+    attributes:
+      label: What you already tried
+      description: Docs read, sample modules compared, commands run
+
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Checklist
+      options:
+        - label: I redacted app IDs, site URLs, and secrets from this issue
+          required: true
