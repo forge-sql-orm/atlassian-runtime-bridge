@@ -4,8 +4,8 @@ title: "[Migration]: "
 labels: ["question", "migration", "triage"]
 body:
   - type: markdown
-    values:
-      - |
+    attributes:
+      value: |
         Start with the [README migration sections](https://github.com/forge-sql-orm/atlassian-runtime-bridge#migration-connect--forge-remote)
         and the [sample app](https://github.com/forge-sql-orm/atlassian-runtime-bridge/tree/main/examples/atlassian-connect-forge-spring-boot-sample).
         This template is for **how to migrate**, not for security reports or library bugs.

@@ -4,8 +4,8 @@ title: "[Feature]: "
 labels: ["enhancement", "triage"]
 body:
   - type: markdown
-    values:
-      - |
+    attributes:
+      value: |
         For large changes (new modules, breaking API), discuss here before opening a PR.
         See [CONTRIBUTING.md](https://github.com/forge-sql-orm/atlassian-runtime-bridge/blob/main/CONTRIBUTING.md).
 

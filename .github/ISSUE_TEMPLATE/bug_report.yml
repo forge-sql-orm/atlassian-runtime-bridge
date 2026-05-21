@@ -4,8 +4,8 @@ title: "[Bug]: "
 labels: ["bug", "triage"]
 body:
   - type: markdown
-    values:
-      - |
+    attributes:
+      value: |
         Thanks for reporting. Search [existing issues](https://github.com/forge-sql-orm/atlassian-runtime-bridge/issues) first.
         **Security issues:** use [SECURITY.md](https://github.com/forge-sql-orm/atlassian-runtime-bridge/blob/main/SECURITY.md) — not this form.
 
