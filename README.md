@@ -57,7 +57,7 @@ The bridge can still **read** Connect’s host row via `installationId` for hybr
 <dependency>
     <groupId>com.github.vzakharchenko</groupId>
     <artifactId>bridge-forge-connect</artifactId>
-    <version>1.0.1</version>
+    <version>1.0.2</version>
 </dependency>
 ```
 
@@ -157,7 +157,7 @@ You now run on **Forge Containers** and **isolated cloud**.
 <dependency>
     <groupId>com.github.vzakharchenko</groupId>
     <artifactId>bridge-forge-connect</artifactId>
-    <version>1.0.1</version>
+    <version>1.0.2</version>
 </dependency>
 ```
 
@@ -167,7 +167,7 @@ You now run on **Forge Containers** and **isolated cloud**.
 <dependency>
     <groupId>com.github.vzakharchenko</groupId>
     <artifactId>bridge-connect-container</artifactId>
-    <version>1.0.1</version>
+    <version>1.0.2</version>
 </dependency>
 ```
 
