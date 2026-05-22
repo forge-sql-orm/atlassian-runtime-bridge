@@ -2,7 +2,6 @@
 
 ![Maven Central Version](https://img.shields.io/maven-central/v/com.github.vzakharchenko/atlassian-runtime-bridge)
 ![GitHub License](https://img.shields.io/github/license/forge-sql-orm/atlassian-runtime-bridge)
-![GitHub code size in bytes](https://img.shields.io/github/languages/code-size/forge-sql-orm/atlassian-runtime-bridge)
 ![GitHub Release](https://img.shields.io/github/v/release/forge-sql-orm/atlassian-runtime-bridge)
 
 
@@ -14,8 +13,11 @@
 [![Maintainability](https://qlty.sh/gh/forge-sql-orm/projects/atlassian-runtime-bridge/maintainability.svg)](https://qlty.sh/gh/forge-sql-orm/projects/atlassian-runtime-bridge)
 [![Code Coverage](https://qlty.sh/gh/forge-sql-orm/projects/atlassian-runtime-bridge/coverage.svg)](https://qlty.sh/gh/forge-sql-orm/projects/atlassian-runtime-bridge)
 
+[![Codacy Badge](https://app.codacy.com/project/badge/Grade/ee719b11f0c5447fbe547f93168a34ba)](https://app.codacy.com/gh/forge-sql-orm/atlassian-runtime-bridge/dashboard?utm_source=gh&utm_medium=referral&utm_content=&utm_campaign=Badge_grade)
+
 [![LoC (full)](https://raw.githubusercontent.com/forge-sql-orm/atlassian-runtime-bridge/badges/loc-full.svg)](https://github.com/forge-sql-orm/atlassian-runtime-bridge/tree/badges)
 [![LoC (src)](https://raw.githubusercontent.com/forge-sql-orm/atlassian-runtime-bridge/badges/loc-src.svg)](https://github.com/forge-sql-orm/atlassian-runtime-bridge/tree/badges)
+![GitHub code size in bytes](https://img.shields.io/github/languages/code-size/forge-sql-orm/atlassian-runtime-bridge)
 
 **One Spring codebase** for Connect, Forge Remote, and Forge Containers — product APIs go through shared adapters (`JiraProductAdapter`, …); the bridge picks Connect JWT, Forge tokens, or the container egress sidecar from `SecurityContext`.
 
