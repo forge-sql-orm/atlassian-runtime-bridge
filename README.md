@@ -14,6 +14,9 @@
 [![Maintainability](https://qlty.sh/gh/forge-sql-orm/projects/atlassian-runtime-bridge/maintainability.svg)](https://qlty.sh/gh/forge-sql-orm/projects/atlassian-runtime-bridge)
 [![Code Coverage](https://qlty.sh/gh/forge-sql-orm/projects/atlassian-runtime-bridge/coverage.svg)](https://qlty.sh/gh/forge-sql-orm/projects/atlassian-runtime-bridge)
 
+[![LoC (full)](https://raw.githubusercontent.com/forge-sql-orm/atlassian-runtime-bridge/badges/loc-full.svg)](https://github.com/forge-sql-orm/atlassian-runtime-bridge/tree/badges)
+[![LoC (src)](https://raw.githubusercontent.com/forge-sql-orm/atlassian-runtime-bridge/badges/loc-src.svg)](https://github.com/forge-sql-orm/atlassian-runtime-bridge/tree/badges)
+
 **One Spring codebase** for Connect, Forge Remote, and Forge Containers — product APIs go through shared adapters (`JiraProductAdapter`, …); the bridge picks Connect JWT, Forge tokens, or the container egress sidecar from `SecurityContext`.
 
 | You are building… | Maven artifact | Sample module |
