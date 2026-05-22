@@ -1,0 +1,60 @@
+---
+# Codacy configuration
+# Docs: https://docs.codacy.com/repositories-configure/codacy-configuration-file/
+#
+# Each `engines.<name>.exclude_paths` block disables that engine's checks on
+# specific files where its heuristic matchers misfire. The library and sample
+# code are otherwise fully analysed.
+
+exclude_paths:
+  # Build artifacts, dependencies, IDE state — never source we want scanned.
+  - "**/target/**"
+  - "**/node_modules/**"
+  - "**/dist/**"
+  - "**/build/**"
+  - "**/.idea/**"
+  - "**/coverage/**"
+
+engines:
+
+  gitleaks:
+    # False positives — the gitleaks "Hardcoded passwords" pattern matches on
+    # the identifier text alone:
+    #
+    #   1. Test fixtures `CLIENT_KEY = "ck-forge"` / `CLIENT_KEY_FROM_CONTEXT
+    #      = "ck-from-ctx"` etc. These are the Atlassian Connect *clientKey*
+    #      — a public tenant identifier emitted by the platform (see
+    #      `com.atlassian.connect.spring.AtlassianHost#getClientKey()`), not
+    #      a credential. The string content (`ck-from-ctx`) makes that
+    #      obvious to a human reader; gitleaks looks at the identifier
+    #      name only.
+    #
+    #   2. `release.sh` line `password="$2"` is shell-script argument parsing
+    #      for the `--password <pgp passphrase>` flag forwarded to
+    #      `mvn release:perform -Dgpg.passphrase=…`. The actual passphrase
+    #      lives in `newRelease.sh`, which is gitignored, not in this file.
+    exclude_paths:
+      - "bridge-common/src/test/**"
+      - "bridge-forge-connect/src/test/**"
+      - "bridge-connect-container/src/test/**"
+      - "release.sh"
+
+  opengrep:
+    # False positives on Opengrep semantic rules:
+    #
+    #   1. `ConnectProductsAdapter.java` — pattern "Detect Hard-Coded
+    #      Atlassian API Tokens" matches the class shell because the file
+    #      contains the type name `AtlassianHostRestClients`. There is no
+    #      token, secret, or credential in the file; it is a thin wrapper
+    #      that delegates to Connect Spring Boot's REST client factory.
+    #
+    #   2. `SECURITY.md` — the PII rule flags the maintainer contact email
+    #      `vaszakharchenko@gmail.com`. The address is intentionally public
+    #      (it is also listed in the root pom.xml `<developers>` block and
+    #      in `CODE_OF_CONDUCT.md`) so security reporters know where to
+    #      send vulnerabilities.
+    exclude_paths:
+      - "bridge-forge-connect/src/main/java/com/github/vzakharchenko/runtime/bridge/forge/products/ConnectProductsAdapter.java"
+      - "SECURITY.md"
+      - "CODE_OF_CONDUCT.md"
+      - "CONTRIBUTING.md"
