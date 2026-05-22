@@ -2,59 +2,70 @@
 # Codacy configuration
 # Docs: https://docs.codacy.com/repositories-configure/codacy-configuration-file/
 #
-# Each `engines.<name>.exclude_paths` block disables that engine's checks on
-# specific files where its heuristic matchers misfire. The library and sample
-# code are otherwise fully analysed.
+# Top-level `exclude_paths` is the only ignore mechanism Codacy applies
+# reliably across every engine (gitleaks + opengrep especially do not
+# respect `engines.<name>.exclude_paths`). Listing a file here means
+# Codacy skips it entirely, so we use this list only for files where the
+# best-practice / secrets engines produce *only* false positives.
 
 exclude_paths:
-  # Build artifacts, dependencies, IDE state — never source we want scanned.
+
+  # Build artifacts and IDE / dependency caches — never source we want
+  # analysed.
   - "**/target/**"
   - "**/node_modules/**"
   - "**/dist/**"
   - "**/build/**"
-  - "**/.idea/**"
   - "**/coverage/**"
+  - "**/.idea/**"
+  - "**/.cursor/**"
+  - "**/.conductor/**"
 
-engines:
+  # release.sh — gitleaks flags `password="$2"` (CLI arg parsing for the
+  # `--password <pgp passphrase>` flag forwarded to `mvn release:perform`),
+  # shellcheck flags an unquoted `${password}` interpolation. Both are
+  # intentional — see the inline comments in the script itself. The actual
+  # passphrase lives in the gitignored `newRelease.sh`, never here.
+  - "release.sh"
 
-  gitleaks:
-    # False positives — the gitleaks "Hardcoded passwords" pattern matches on
-    # the identifier text alone:
-    #
-    #   1. Test fixtures `CLIENT_KEY = "ck-forge"` / `CLIENT_KEY_FROM_CONTEXT
-    #      = "ck-from-ctx"` etc. These are the Atlassian Connect *clientKey*
-    #      — a public tenant identifier emitted by the platform (see
-    #      `com.atlassian.connect.spring.AtlassianHost#getClientKey()`), not
-    #      a credential. The string content (`ck-from-ctx`) makes that
-    #      obvious to a human reader; gitleaks looks at the identifier
-    #      name only.
-    #
-    #   2. `release.sh` line `password="$2"` is shell-script argument parsing
-    #      for the `--password <pgp passphrase>` flag forwarded to
-    #      `mvn release:perform -Dgpg.passphrase=…`. The actual passphrase
-    #      lives in `newRelease.sh`, which is gitignored, not in this file.
-    exclude_paths:
-      - "bridge-common/src/test/**"
-      - "bridge-forge-connect/src/test/**"
-      - "bridge-connect-container/src/test/**"
-      - "release.sh"
+  # SECURITY.md, CONTRIBUTING.md, CODE_OF_CONDUCT.md publish the
+  # maintainer's public contact address (vaszakharchenko@gmail.com — same
+  # one in the root pom <developers> block). Codacy's PII rule flags any
+  # visible email address indiscriminately; an intentionally-public
+  # contact is the documented exception.
+  #
+  # SECURITY.md also gets a "Vague conditional" hit on the wording
+  # "applied to the latest release ... when appropriate" — that phrasing
+  # is policy language, not a runtime conditional. Exclude the whole
+  # file from opengrep semantic-text rules.
+  - "SECURITY.md"
+  - "CONTRIBUTING.md"
+  - "CODE_OF_CONDUCT.md"
 
-  opengrep:
-    # False positives on Opengrep semantic rules:
-    #
-    #   1. `ConnectProductsAdapter.java` — pattern "Detect Hard-Coded
-    #      Atlassian API Tokens" matches the class shell because the file
-    #      contains the type name `AtlassianHostRestClients`. There is no
-    #      token, secret, or credential in the file; it is a thin wrapper
-    #      that delegates to Connect Spring Boot's REST client factory.
-    #
-    #   2. `SECURITY.md` — the PII rule flags the maintainer contact email
-    #      `vaszakharchenko@gmail.com`. The address is intentionally public
-    #      (it is also listed in the root pom.xml `<developers>` block and
-    #      in `CODE_OF_CONDUCT.md`) so security reporters know where to
-    #      send vulnerabilities.
-    exclude_paths:
-      - "bridge-forge-connect/src/main/java/com/github/vzakharchenko/runtime/bridge/forge/products/ConnectProductsAdapter.java"
-      - "SECURITY.md"
-      - "CODE_OF_CONDUCT.md"
-      - "CONTRIBUTING.md"
+  # Test fixtures across all three modules use Atlassian Connect's
+  # *clientKey* — a public per-tenant identifier emitted by the platform,
+  # documented at AtlassianHost#getClientKey() — as a static constant
+  # (`CLIENT_KEY = "ck-forge"`, etc.). Gitleaks pattern-matches on the
+  # identifier substring `KEY` plus a quoted string and flags it as a
+  # hard-coded password regardless of how obvious the actual value is.
+  #
+  # The Opengrep "Enforce JUnit Tests to Include Assert" rule also misfires
+  # on tests that wrap assertions inside lambdas (the project uses
+  # WebApplicationContextRunner-style assertions: `runner.run(ctx -> ...)`).
+  # Inside ContainerWebSecurityConfigurationTest the assertions live in
+  # the lambda body but Opengrep's heuristic only inspects the method
+  # body's top-level statements.
+  #
+  # We already enforce code style on tests via Spotless / Checkstyle /
+  # SpotBugs / PMD during `mvn verify`, so dropping the Codacy noisy
+  # engines on test sources costs little in practice.
+  - "bridge-common/src/test/**"
+  - "bridge-forge-connect/src/test/**"
+  - "bridge-connect-container/src/test/**"
+
+  # ConnectProductsAdapter.java — the Opengrep rule "Detect Hard-Coded
+  # Atlassian API Tokens" fires on the file because it references the
+  # type `AtlassianHostRestClients`. There is no token or credential in
+  # the file; it is a thin wrapper that delegates to Connect Spring Boot's
+  # REST client factory.
+  - "bridge-forge-connect/src/main/java/com/github/vzakharchenko/runtime/bridge/forge/products/ConnectProductsAdapter.java"
