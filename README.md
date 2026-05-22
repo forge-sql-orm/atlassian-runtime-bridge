@@ -6,6 +6,7 @@
 ![GitHub Release](https://img.shields.io/github/v/release/forge-sql-orm/atlassian-runtime-bridge)
 
 
+[![Codacy Badge](https://api.codacy.com/project/badge/Grade/2a24ae26d4f945bd8141b532ddccb94e)](https://app.codacy.com/gh/forge-sql-orm/atlassian-runtime-bridge?utm_source=github.com&utm_medium=referral&utm_content=forge-sql-orm/atlassian-runtime-bridge&utm_campaign=Badge_Grade)
 [![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=forge-sql-orm_atlassian-runtime-bridge&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=forge-sql-orm_atlassian-runtime-bridge)
 [![Bugs](https://sonarcloud.io/api/project_badges/measure?project=forge-sql-orm_atlassian-runtime-bridge&metric=bugs)](https://sonarcloud.io/summary/new_code?id=forge-sql-orm_atlassian-runtime-bridge)
 [![Code Smells](https://sonarcloud.io/api/project_badges/measure?project=forge-sql-orm_atlassian-runtime-bridge&metric=code_smells)](https://sonarcloud.io/summary/new_code?id=forge-sql-orm_atlassian-runtime-bridge)
