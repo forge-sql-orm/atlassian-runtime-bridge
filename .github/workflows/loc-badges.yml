@@ -1,0 +1,90 @@
+name: LoC badges
+
+on:
+  push:
+    branches:
+      - main
+  schedule:
+    # Daily at 04:00 UTC — keeps badges fresh even on quiet days.
+    - cron: "0 4 * * *"
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+concurrency:
+  group: loc-badge
+  cancel-in-progress: true
+
+jobs:
+  loc:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          ref: main
+          fetch-depth: 1
+
+      - name: Prepare output dir
+        run: mkdir -p output
+
+      # cloc-based LoC counter; pinned to commit SHA per repo policy.
+      # `loc-full` counts everything Maven + the sample app, minus build,
+      # IDE, lockfile, and structured-data noise (poms, manifests, YAML
+      # config, properties, and Spring Boot AutoConfiguration metadata).
+      - name: LoC (whole repo, including examples)
+        uses: alexispurslane/GHA-LoC-Badge@811a7fa2bae9860e8f254bcb9cfb71d021931a77 # v2.0.0
+        with:
+          debug: true
+          directory: ./
+          badge: ./output/loc-full.svg
+          badge_label: "LoC (full)"
+          badge_color: "blue"
+          ignore: "target|node_modules|.idea|.cursor|.conductor|.frontend|build|coverage|dist|dist-cli|*.lock|package-lock.json|*.iml|*.svg|*.png|*.jpg|*.gif|*.ico|*.css|*.html|*.md|*.xml|*.yml|*.yaml|*.json|*.properties|*.factories|*.imports|*.example|*.releaseBackup|customUI/bundle.*"
+
+      # `loc-src` counts only the published library sources:
+      # bridge-common, bridge-forge-connect, bridge-connect-container —
+      # both main/ and test/ trees. The example project under examples/
+      # is excluded so the badge tracks the library you ship to Central.
+      # `patterns:` is anchored at the workspace root.
+      - name: LoC (bridge library sources only)
+        uses: alexispurslane/GHA-LoC-Badge@811a7fa2bae9860e8f254bcb9cfb71d021931a77 # v2.0.0
+        with:
+          debug: true
+          directory: ./
+          badge: ./output/loc-src.svg
+          badge_label: "LoC (src)"
+          badge_color: "green"
+          patterns: "bridge-common/src/**|bridge-forge-connect/src/**|bridge-connect-container/src/**"
+          ignore: "*.xml|*.yml|*.yaml|*.json|*.properties|*.factories|*.imports"
+
+      - name: Publish badges to `badges` branch
+        run: |
+          set -euo pipefail
+
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          # Stash badge SVGs outside the worktree so the orphan reset
+          # below doesn't wipe them.
+          TMP=$(mktemp -d)
+          cp output/loc-full.svg "$TMP/"
+          cp output/loc-src.svg  "$TMP/"
+
+          git checkout --orphan badges
+          git rm -rf --quiet . || true
+          git clean -fdx -e output
+
+          mv "$TMP/loc-full.svg" ./loc-full.svg
+          mv "$TMP/loc-src.svg"  ./loc-src.svg
+
+          git add loc-full.svg loc-src.svg
+          if git diff --cached --quiet; then
+            echo "No badge changes — nothing to publish."
+            exit 0
+          fi
+
+          git commit -m "chore(badges): refresh LoC badges"
+          git push -f origin badges
