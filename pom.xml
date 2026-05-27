@@ -77,7 +77,7 @@
         <central-publishing-maven-plugin.version>0.10.0</central-publishing-maven-plugin.version>
         <jacoco.minimum.line.covered.ratio>0.85</jacoco.minimum.line.covered.ratio>
         <!-- SonarScanner for Maven (profile sonar); https://central.sonatype.com/artifact/org.sonarsource.scanner.maven/sonar-maven-plugin -->
-        <sonar-maven-plugin.version>5.6.0.6792</sonar-maven-plugin.version>
+        <sonar-maven-plugin.version>5.7.0.6970</sonar-maven-plugin.version>
         <sonar.host.url>https://sonarcloud.io</sonar.host.url>
         <!-- Wildcard: modules without tests may have no report; Sonar picks existing files. -->
         <sonar.coverage.jacoco.xmlReportPaths>${maven.multiModuleProjectDirectory}/*/target/site/jacoco/jacoco.xml</sonar.coverage.jacoco.xmlReportPaths>
