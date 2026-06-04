@@ -23,9 +23,6 @@ services:
 
 app:
   id: ari:cloud:ecosystem::app/cbad754b-3ea4-4759-a6ef-eb575b1a7427
-  connect:
-    key: runtime-bridge-spring-boot-sample-atlaskit
-    remote: java-service
   runtime:
     name: nodejs24.x
 
@@ -48,7 +45,7 @@ modules:
     - key: impersonation-ep
       service: java-service
       route:
-        path: /api/impersonation
+        path: /api
 
 resources:
   - key: main

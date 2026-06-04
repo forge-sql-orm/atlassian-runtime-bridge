@@ -88,14 +88,14 @@ public class BusinessLogicController {
         AtlassianHost host = hostFromQuery(installationId, cloudId);
         try {
             manualAuthorizationService.authorize(host);
+            AtlassianHostUser hostUser = AtlassianHostUser.builder(host).withUserAccountId(accountId).build();
+            JiraMyselfResponse myself = fetchJiraMyself(hostUser);
+            String label = myself != null ? myself.displayName() : accountId;
+            return message("Hello from BusinessLogicController. User: " + label);
         } catch (Exception e) {
             LOG.warn("Impersonation failed", e);
             return message("Impersonation failed: " + e.getMessage());
         }
-        AtlassianHostUser hostUser = AtlassianHostUser.builder(host).withUserAccountId(accountId).build();
-        JiraMyselfResponse myself = fetchJiraMyself(hostUser);
-        String label = myself != null ? myself.displayName() : accountId;
-        return message("Hello from BusinessLogicController. User: " + label);
     }
 
     private JiraMyselfResponse fetchJiraMyself(AtlassianHostUser user) {
