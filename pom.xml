@@ -51,7 +51,7 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <java.version>21</java.version>
-        <spring-security.version>6.5.10</spring-security.version>
+        <spring-security.version>6.5.11</spring-security.version>
         <!-- Override Spring Boot 3.5.14 default (10.1.54) — Dependabot flagged
              several Critical/High Tomcat CVEs fixed in 10.1.55. -->
         <tomcat.version>10.1.55</tomcat.version>
@@ -61,7 +61,7 @@
         <spotless-maven-plugin.version>2.46.1</spotless-maven-plugin.version>
         <google-java-format.version>1.27.0</google-java-format.version>
         <spotless.skip>false</spotless.skip>
-        <spotbugs-maven-plugin.version>4.9.8.4</spotbugs-maven-plugin.version>
+        <spotbugs-maven-plugin.version>4.10.2.0</spotbugs-maven-plugin.version>
         <spotbugs.skip>false</spotbugs.skip>
         <errorprone.skip>false</errorprone.skip>
         <maven-pmd-plugin.version>3.28.0</maven-pmd-plugin.version>
