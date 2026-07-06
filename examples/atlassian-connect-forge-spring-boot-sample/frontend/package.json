@@ -14,7 +14,7 @@
     "watch": "esbuild src/main/resources/javascript/main.ts --bundle --outfile=target/classes/static/bundle.js --format=iife --platform=browser --target=es2015 --watch --alias:app-transport=./src/main/resources/javascript/connect.ts"
   },
   "dependencies": {
-    "@forge/bridge": "^6.0.0",
+    "@forge/bridge": "^6.1.0",
     "react": "19.2.6",
     "react-dom": "19.2.6",
     "styled-components": "6.4.3"
