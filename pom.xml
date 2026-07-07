@@ -54,7 +54,7 @@
         <spring-security.version>6.5.11</spring-security.version>
         <!-- Override Spring Boot 3.5.14 default (10.1.54) — Dependabot flagged
              several Critical/High Tomcat CVEs fixed in 10.1.55. -->
-        <tomcat.version>10.1.56</tomcat.version>
+        <tomcat.version>10.1.57</tomcat.version>
         <error-prone.version>2.49.0</error-prone.version>
         <atlassian.connect.version>6.0.7</atlassian.connect.version>
         <maven-checkstyle-plugin.version>3.6.0</maven-checkstyle-plugin.version>
