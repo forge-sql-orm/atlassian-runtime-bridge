@@ -28,22 +28,31 @@ import org.springframework.util.StringUtils;
 
 /**
  * Hybrid runtime: the system token arrives in {@code x-forge-oauth-system} and is the app token. It
- * is a regular Atlassian OAuth access token (RS256 JWT, issuer {@code https://auth.atlassian.com})
- * obtained for the app's installation, so it is validated like the invocation token, but against
- * the Atlassian auth JWKS.
+ * is an Atlassian OAuth access token (RS256 JWT, issuer {@code https://auth.atlassian.com})
+ * obtained for the app's installation.
  *
- * <p>Enforced on every call: the token is a JWT, its RS256 signature matches a key of the JWKS,
- * {@code iss} matches, {@code exp} is present and not passed (clock skew from {@code
- * app.clockTolerance}, default 60s), and {@code aud} contains the installation id of the invocation
- * token — which the Connect library has already verified (signature, {@code iss}, {@code
- * aud=app.id}, {@code exp}) — so the token belongs to this app installation. The Connect library
- * itself only <em>reads</em> {@code exp} of the system token.
+ * <p><strong>Atlassian does not document how to validate this token</strong>, so these checks are
+ * not an official contract and can be disabled. Atlassian treats OAuth tokens and their claims as
+ * opaque and does not publish their shape. The checks below rely on the shape observed on real
+ * Forge system tokens (issuer, JWKS location, and an {@code aud} that lists the installation ARI);
+ * they may need adjusting, or disabling, if the token contents change. Every check except {@code
+ * exp} has a property that turns it off. The Connect library itself only <em>reads</em> {@code exp}
+ * of this token, so these checks are the only signature, issuer and installation-binding checks it
+ * gets.
  *
- * <p>Overridable (set to an empty value to disable that part):
+ * <p>Checks:
  *
  * <ul>
- *   <li>{@code bridge.forge.system-token.jwks-url} — default {@value #DEFAULT_JWKS_URL};
- *   <li>{@code bridge.forge.system-token.issuer} — default {@value #DEFAULT_ISSUER}.
+ *   <li>always: the token is a JWT with an {@code exp} that has not passed (clock skew from {@code
+ *       app.clockTolerance}, default 60s);
+ *   <li>signature: RS256 against the JWKS, {@code bridge.forge.system-token.jwks-url} (default
+ *       {@value #DEFAULT_JWKS_URL}; empty disables);
+ *   <li>issuer: {@code bridge.forge.system-token.issuer} (default {@value #DEFAULT_ISSUER}; empty
+ *       disables);
+ *   <li>installation binding: {@code aud} contains the installation id of the invocation token —
+ *       which the Connect library has already verified — so the token belongs to this installation;
+ *       {@code bridge.forge.system-token.bind-installation} (default {@code true}; {@code false}
+ *       disables).
  * </ul>
  */
 @Component
@@ -57,11 +66,13 @@ public class ForgeSystemTokenPolicy implements SystemTokenPolicy {
 
   private final DefaultJWTProcessor<SecurityContext> signedProcessor;
   private final DefaultJWTClaimsVerifier<SecurityContext> claimsVerifier;
+  private final boolean bindInstallation;
 
   @Autowired
   public ForgeSystemTokenPolicy(
       @Value("${bridge.forge.system-token.jwks-url:" + DEFAULT_JWKS_URL + "}") String jwksUrl,
       @Value("${bridge.forge.system-token.issuer:" + DEFAULT_ISSUER + "}") String issuer,
+      @Value("${bridge.forge.system-token.bind-installation:true}") boolean bindInstallation,
       @Value("${app.clockTolerance:60}") int clockToleranceSeconds)
       throws MalformedURLException {
     this(
@@ -69,10 +80,20 @@ public class ForgeSystemTokenPolicy implements SystemTokenPolicy {
             ? JWKSourceBuilder.create(URI.create(jwksUrl).toURL()).build()
             : null,
         issuer,
+        bindInstallation,
         clockToleranceSeconds);
   }
 
   ForgeSystemTokenPolicy(JWKSource<SecurityContext> jwkSource, String issuer, int clockSkew) {
+    this(jwkSource, issuer, true, clockSkew);
+  }
+
+  ForgeSystemTokenPolicy(
+      JWKSource<SecurityContext> jwkSource,
+      String issuer,
+      boolean bindInstallation,
+      int clockSkew) {
+    this.bindInstallation = bindInstallation;
     var exact = new JWTClaimsSet.Builder();
     if (StringUtils.hasText(issuer)) {
       exact.issuer(issuer);
@@ -98,7 +119,7 @@ public class ForgeSystemTokenPolicy implements SystemTokenPolicy {
     }
     try {
       var claims = verify(token);
-      if (!belongsToInstallation(claims, installationId(context))) {
+      if (bindInstallation && !belongsToInstallation(claims, installationId(context))) {
         throw new BadJWTException("token audience does not include the invocation installation");
       }
       return true;

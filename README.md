@@ -97,16 +97,19 @@ The token is an Atlassian OAuth access token (RS256 JWT). `ForgeSystemTokenPolic
 
 - the RS256 signature against the Atlassian JWKS and `iss` (`https://auth.atlassian.com`);
 - `exp` is present and not passed (clock skew from `app.clockTolerance`, default 60 s);
-- `aud` contains the `installationId` of the invocation token (which Connect Spring has already verified), so the token belongs to this app installation.
+- **installation binding:** `aud` contains the `installationId` of the invocation token (which Connect Spring has already verified), so the token belongs to this app installation.
 
-The Connect Spring library itself only reads `exp` of this token. Overrides (an empty value disables that part):
+The Connect Spring library itself only reads `exp` of this token, so these are the only signature, issuer and installation checks it gets.
 
-| Property | Default |
-|----------|---------|
-| `bridge.forge.system-token.jwks-url` | `https://auth.atlassian.com/.well-known/jwks.json` |
-| `bridge.forge.system-token.issuer` | `https://auth.atlassian.com` |
+> **Atlassian does not document how to validate this token**, so these checks are not an official contract and **can be disabled**. Atlassian treats OAuth tokens and their claims as opaque and does not publish their shape; the issuer, the JWKS location and the installation ARI in `aud` come from the shape observed on real Forge system tokens and are not guaranteed. If Atlassian changes the token contents, valid system tokens could be rejected (HTTP 403 on every endpoint, because a present system token is always validated). If that is a risk for you, turn off the checks that rely on the unpublished shape with the properties below; `exp` is the only check that does not depend on it.
 
-Keys are fetched lazily and cached, so there is no network access at startup. Non-production Atlassian environments may use another issuer or JWKS; override both properties there.
+| Property | Default | Disable with |
+|----------|---------|--------------------------|
+| `bridge.forge.system-token.jwks-url` | `https://auth.atlassian.com/.well-known/jwks.json` | empty value — disables the signature check |
+| `bridge.forge.system-token.issuer` | `https://auth.atlassian.com` | empty value — disables the issuer check |
+| `bridge.forge.system-token.bind-installation` | `true` | `false` — disables the installation binding (`aud`) |
+
+Keys are fetched lazily and cached, so there is no network access at startup. Non-production Atlassian environments may use another issuer or JWKS; override the properties there.
 
 ### Programmatic use
 

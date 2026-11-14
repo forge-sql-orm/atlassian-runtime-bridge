@@ -111,6 +111,23 @@ class ForgeSystemTokenPolicyTest {
   }
 
   @Test
+  void acceptsTokenOfAnotherInstallationWhenBindingDisabled() throws Exception {
+    var token = jwt(key, ISSUER, "ari:cloud:ecosystem::installation/inst-2", 60_000);
+    var policy =
+        new ForgeSystemTokenPolicy(
+            new ImmutableJWKSet<>(new JWKSet(key.toPublicJWK())), ISSUER, false, 0);
+    assertThat(policy.hasSystemToken(auth(token))).isTrue();
+  }
+
+  @Test
+  void rejectsForgedSignatureEvenWhenBindingDisabled() throws Exception {
+    var policy =
+        new ForgeSystemTokenPolicy(
+            new ImmutableJWKSet<>(new JWKSet(key.toPublicJWK())), ISSUER, false, 0);
+    assertThat(policy.hasSystemToken(auth(jwt(otherKey, ISSUER, INSTALLATION, 60_000)))).isFalse();
+  }
+
+  @Test
   void rejectsWhenInvocationHasNoInstallation() throws Exception {
     assertThat(strict().hasSystemToken(auth(jwt(key, ISSUER, INSTALLATION, 60_000), null)))
         .isFalse();
