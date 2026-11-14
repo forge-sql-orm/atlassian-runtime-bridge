@@ -32,6 +32,86 @@ Do **not** put `bridge-forge-connect` and `bridge-connect-container` on the same
 
 Built against **Atlassian Connect Spring Boot 6.x** and **Spring Boot 3.5.x** (root `pom.xml`).
 
+## Authentication vs. authorization, and `@SystemCallOnly`
+
+**By default the library performs authentication, not authorization.** It establishes *who is calling and for which tenant* (Forge invocation token → `ForgeAuthentication` / `AtlassianHostUser`), and nothing more. Whether that caller is *allowed* to run a particular handler is up to your application: write your own checks, or use the ready-made **`@SystemCallOnly`** annotation (`bridge-common`; same in `bridge-forge-connect` and `bridge-connect-container`).
+
+### Same model as Atlassian Connect
+
+The bridge keeps the authorization model Connect Spring Boot already had, so existing code carries over:
+
+- **No roles.** `ForgeAuthentication` (like Connect's `JwtAuthentication`) exposes no `GrantedAuthority` — `getAuthorities()` is empty — so there is nothing to match with `hasRole(...)`. Decisions are made on the identity: the `AtlassianHostUser` principal (host, tenant, optional account id).
+- **Per-handler, annotation-driven rules.** Connect enforces its requirements in a `HandlerInterceptor` that reads annotations on the handler: JWT is required unless the handler has `@IgnoreJwt`, `@ForgeRemote` requires a Forge invocation token. Authorization rules in the bridge follow the same pattern — a rule is an annotation on the handler, enforced by an interceptor, and a handler without it behaves as before. `@SystemCallOnly` is such a rule.
+- **Everything else is yours.** Read the identity with `@AuthenticationPrincipal AtlassianHostUser` (or `SecurityContextHolder`) and check it in plain code:
+
+  ```java
+  @GetMapping("/api/reports")
+  public Report reports(@AuthenticationPrincipal AtlassianHostUser hostUser) {
+    String accountId =
+        hostUser.getUserAccountId().orElseThrow(() -> new AccessDeniedException("User required"));
+    if (!permissions.canViewReports(hostUser.getHost().getCloudId(), accountId)) {
+      throw new AccessDeniedException("Not allowed");
+    }
+    return reportService.build(accountId);
+  }
+  ```
+
+  `getUserAccountId()` is empty for system calls (triggers). `AccessDeniedException` (Spring Security) is answered with 403.
+
+**If the request carries a system (offline) token, it is always validated** (hybrid runtime), on every endpoint and without any annotation: `AtlassianForgeFilter` answers an invalid token with HTTP 403 and clears the security context. A request without a system token is not affected — requiring one is an authorization decision, see below.
+
+### `@SystemCallOnly`
+
+Forge `scheduledTrigger` and `trigger` modules call an endpoint **without a user**. Annotate the Spring handler (or the whole controller) that serves such an endpoint:
+
+```yaml
+modules:
+  scheduledTrigger:
+    - key: token-sync
+      endpoint: system-token-sync
+  trigger:
+    - key: event-install
+      endpoint: system-token-sync
+      events: [avi:forge:installed:app, avi:forge:upgraded:app]
+```
+
+```java
+@SystemCallOnly
+@PostMapping("/system/sync")
+@ResponseBody
+@ForgeRemote
+public String sync() { ... }
+```
+
+Handlers without the annotation behave exactly as before. A request that fails any check is rejected with `AccessDeniedException` (HTTP 403).
+
+| Check | Hybrid (`bridge-forge-connect`) | Containers (`bridge-connect-container`) |
+|-------|:---:|:---:|
+| The request carries a `ForgeAuthentication` (fails closed otherwise) | yes | yes |
+| No user: invocation token has no `principal` and `AtlassianHostUser` has no account id | yes | yes |
+| A valid system token (`x-forge-oauth-system`) is present | yes | no — the token stays in the egress sidecar and is not visible to the app |
+
+### System token validation (hybrid)
+
+The token is an Atlassian OAuth access token (RS256 JWT). `ForgeSystemTokenPolicy` verifies:
+
+- the RS256 signature against the Atlassian JWKS and `iss` (`https://auth.atlassian.com`);
+- `exp` is present and not passed (clock skew from `app.clockTolerance`, default 60 s);
+- `aud` contains the `installationId` of the invocation token (which Connect Spring has already verified), so the token belongs to this app installation.
+
+The Connect Spring library itself only reads `exp` of this token. Overrides (an empty value disables that part):
+
+| Property | Default |
+|----------|---------|
+| `bridge.forge.system-token.jwks-url` | `https://auth.atlassian.com/.well-known/jwks.json` |
+| `bridge.forge.system-token.issuer` | `https://auth.atlassian.com` |
+
+Keys are fetched lazily and cached, so there is no network access at startup. Non-production Atlassian environments may use another issuer or JWKS; override both properties there.
+
+### Programmatic use
+
+Call `SystemCallVerifier.assertSystemCall()` (no user) or `SystemCallVerifier.assertSystemCall(SystemTokenPolicy)` (no user plus system token) from code that cannot use the annotation. `SystemTokenPolicy` is the extension point behind the token check; `bridge-forge-connect` registers `ForgeSystemTokenPolicy`, `bridge-connect-container` registers none, so the token check is skipped there.
+
 ---
 
 ## Migration: Connect → Forge Remote
@@ -427,6 +507,7 @@ Forge platform ──ingress──► your container :8080
 | **`ManualAuthorizationService`** (`ManualAuthorizationServiceImpl`) | Seed **`SecurityContextHolder`** for background work, webtriggers, or tests (rejects cross-tenant `cloudId` when a context already exists) |
 | **`ContainerAuthorizationFilter`** | Ingress: when `x-forge-invocation-id` is present, populates `SecurityContextHolder` with `ForgeAuthentication`. Inserted **inside** the Spring Security chain via `addFilterAfter(SecurityContextHolderFilter.class)` — running before `SecurityContextHolderFilter` (or entirely outside the chain) would let it reload an empty deferred context from the stateless repository and overwrite the installed authentication, after which `AuthorizationFilter` rejects non-public paths with 403 |
 | **`ContainerWebSecurityConfiguration`** | Stateless HTTP security (no form login). Public paths come from `bridge.container.security.public-paths` (default `[/health]`); everything else requires an authenticated principal set by `ContainerAuthorizationFilter` |
+| **`@SystemCallOnly`** (`SystemCallInterceptor`) | Rejects handlers called with a user; only the no-`userId` check applies in containers, see [System calls](#authentication-vs-authorization-and-systemcallonly) |
 
 **`ManualAuthorizationService`** overloads match the hybrid module (`authorize(AtlassianHostUser)`, `authorize(AtlassianHost)`, `authorize(cloudId, installationId, accountId)`). Clear the security context after background tasks.
 

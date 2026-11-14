@@ -1,6 +1,7 @@
 package sample.connect.spring.atlaskit;
 
 import com.atlassian.connect.spring.ForgeRemote;
+import com.github.vzakharchenko.runtime.bridge.common.SystemCallOnly;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
@@ -22,7 +23,11 @@ public class ForgeController {
      * <p>
      * Path and remote wiring are declared in {@code manifest.yml}: endpoint {@code system-token-sync}
      * maps route {@code /system/sync} onto the {@code connect} remote base URL.
+     * <p>
+     * {@link SystemCallOnly} rejects (403) any call that carries a userId, so only the
+     * scheduler / install triggers can reach this handler.
      */
+    @SystemCallOnly
     @PostMapping("/system/sync")
     @ResponseBody
     @ForgeRemote
