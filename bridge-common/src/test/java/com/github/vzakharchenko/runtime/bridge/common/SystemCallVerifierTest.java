@@ -85,36 +85,48 @@ class SystemCallVerifierTest {
 
   @SystemCallOnly
   static class Guarded {
-    public void run() {}
+    public void run() {
+      // intentionally empty: only the annotations of the handler matter
+    }
   }
 
   static class Open {
-    public void run() {}
+    public void run() {
+      // intentionally empty: only the annotations of the handler matter
+    }
 
     @SystemCallOnly
-    public void guarded() {}
+    public void guarded() {
+      // intentionally empty: only the annotations of the handler matter
+    }
   }
 
-  private static boolean preHandle(Object bean, String method) throws Exception {
+  private final SystemCallInterceptor interceptor = new SystemCallInterceptor(null);
+  private final MockHttpServletRequest request = new MockHttpServletRequest();
+  private final MockHttpServletResponse response = new MockHttpServletResponse();
+
+  private static HandlerMethod handler(Object bean, String method) throws NoSuchMethodException {
     Method m = bean.getClass().getMethod(method);
-    return new SystemCallInterceptor(null)
-        .preHandle(
-            new MockHttpServletRequest(),
-            new MockHttpServletResponse(),
-            new HandlerMethod(bean, m));
+    return new HandlerMethod(bean, m);
+  }
+
+  private boolean preHandle(Object bean, String method) throws Exception {
+    return interceptor.preHandle(request, response, handler(bean, method));
   }
 
   @Test
-  void interceptorRejectsUserCallOnAnnotatedClass() {
+  void interceptorRejectsUserCallOnAnnotatedClass() throws Exception {
     SecurityContextHolder.getContext().setAuthentication(new ForgeAuthentication(context("a")));
-    assertThatThrownBy(() -> preHandle(new Guarded(), "run"))
+    var handler = handler(new Guarded(), "run");
+    assertThatThrownBy(() -> interceptor.preHandle(request, response, handler))
         .isInstanceOf(AccessDeniedException.class);
   }
 
   @Test
-  void interceptorRejectsUserCallOnAnnotatedMethod() {
+  void interceptorRejectsUserCallOnAnnotatedMethod() throws Exception {
     SecurityContextHolder.getContext().setAuthentication(new ForgeAuthentication(context("a")));
-    assertThatThrownBy(() -> preHandle(new Open(), "guarded"))
+    var handler = handler(new Open(), "guarded");
+    assertThatThrownBy(() -> interceptor.preHandle(request, response, handler))
         .isInstanceOf(AccessDeniedException.class);
   }
 
@@ -125,9 +137,11 @@ class SystemCallVerifierTest {
   }
 
   @Test
-  void interceptorIgnoresUnannotatedHandlers() {
+  void interceptorIgnoresUnannotatedHandlers() throws Exception {
     SecurityContextHolder.getContext().setAuthentication(new ForgeAuthentication(context("a")));
-    assertThatCode(() -> preHandle(new Open(), "run")).doesNotThrowAnyException();
+    var handler = handler(new Open(), "run");
+    assertThatCode(() -> interceptor.preHandle(request, response, handler))
+        .doesNotThrowAnyException();
   }
 
   @Test

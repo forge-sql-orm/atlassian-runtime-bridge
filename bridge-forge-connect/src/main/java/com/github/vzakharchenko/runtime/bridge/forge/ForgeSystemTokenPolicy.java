@@ -3,13 +3,16 @@ package com.github.vzakharchenko.runtime.bridge.forge;
 import com.atlassian.connect.spring.ForgeApiContext;
 import com.atlassian.connect.spring.internal.auth.frc.ForgeAuthentication;
 import com.github.vzakharchenko.runtime.bridge.common.SystemTokenPolicy;
+import com.nimbusds.jose.JOSEException;
 import com.nimbusds.jose.JWSAlgorithm;
 import com.nimbusds.jose.jwk.source.JWKSource;
 import com.nimbusds.jose.jwk.source.JWKSourceBuilder;
+import com.nimbusds.jose.proc.BadJOSEException;
 import com.nimbusds.jose.proc.JWSVerificationKeySelector;
 import com.nimbusds.jose.proc.SecurityContext;
 import com.nimbusds.jwt.JWTClaimsSet;
 import com.nimbusds.jwt.JWTParser;
+import com.nimbusds.jwt.proc.BadJWTException;
 import com.nimbusds.jwt.proc.DefaultJWTClaimsVerifier;
 import com.nimbusds.jwt.proc.DefaultJWTProcessor;
 import java.net.MalformedURLException;
@@ -96,10 +99,10 @@ public class ForgeSystemTokenPolicy implements SystemTokenPolicy {
     try {
       var claims = verify(token);
       if (!belongsToInstallation(claims, installationId(context))) {
-        throw new ParseException("token audience does not include the invocation installation", 0);
+        throw new BadJWTException("token audience does not include the invocation installation");
       }
       return true;
-    } catch (Exception e) {
+    } catch (ParseException | JOSEException | BadJOSEException e) {
       if (LOGGER.isWarnEnabled()) {
         LOGGER.warn("Forge system token rejected: {}", e.getMessage());
       }
@@ -107,7 +110,7 @@ public class ForgeSystemTokenPolicy implements SystemTokenPolicy {
     }
   }
 
-  private JWTClaimsSet verify(String token) throws Exception {
+  private JWTClaimsSet verify(String token) throws ParseException, JOSEException, BadJOSEException {
     if (signedProcessor != null) {
       return signedProcessor.process(token, null);
     }
