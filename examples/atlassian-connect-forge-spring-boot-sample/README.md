@@ -181,6 +181,8 @@ This endpoint assumes a **valid Forge system access token** for the installation
 The token must be refreshed periodically or Jira calls will start failing. In this sample, refresh is **driven** by:
 
 1. **`scheduledTrigger`** in `manifest.yml` — periodic call to remote `system-token-sync` → Spring `POST /system/sync` ([`ForgeController`](forge-connect/src/main/java/sample/connect/spring/atlaskit/ForgeController.java)).
+
+> The bridge authenticates callers but does not authorize them. This sample annotates the trigger endpoint with `@SystemCallOnly` (works in both Forge Remote and Forge Container; bridge **2.0.0**+) to reject requests that carry a `userId`; a system token in the request is always validated. See the root README, *Authentication vs. authorization*.
 2. **`trigger`** on `avi:forge:installed:app` and `avi:forge:upgraded:app` — same endpoint after install/upgrade.
 3. Any **Custom UI traffic** over `forge-remote` to your backend — your Connect Spring stack may persist/update whatever is needed for later calls (implement in `ForgeController` / services).
 
