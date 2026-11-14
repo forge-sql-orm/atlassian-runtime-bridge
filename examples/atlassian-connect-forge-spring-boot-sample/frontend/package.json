@@ -5,7 +5,7 @@
   "private": true,
   "scripts": {
     "typecheck": "tsc --noEmit",
-    "upgrade-deps": "ncu -u --dep prod,dev,peer && npm install",
+    "upgrade-deps": "ncu -u --dep prod,dev,peer && npm install && npm update",
     "prebuild": "npm install && shx mkdir -p target/classes/static ../forge-connect/customUI",
     "build:connect": "esbuild src/main/resources/javascript/main.ts --bundle --outfile=target/classes/static/bundle.js --format=iife --platform=browser --target=es2015 --legal-comments=none --alias:app-transport=./src/main/resources/javascript/connect.ts",
     "build:forge": "esbuild src/main/resources/javascript/forgeEntry.ts --bundle --outfile=../forge-connect/customUI/bundle.js --format=iife --platform=browser --target=es2015 --legal-comments=none --alias:app-transport=./src/main/resources/javascript/forge.ts && shx cp forge/index.html ../forge-connect/customUI/index.html",
