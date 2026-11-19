@@ -4,6 +4,13 @@ All notable changes to this project are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Changed
+
+- **`app.clockTolerance` now defaults to `0`** (was `60`) in `ForgeSystemTokenPolicy` (`bridge-forge-connect`): the `exp` check of the system token allows no clock skew unless `app.clockTolerance` is set explicitly. Set it to a few seconds if your server clock drifts from Atlassian's.
+- README: added a table of contents with links to the examples.
+
 ## [2.0.0] - 14.11.2026
 
 ### Added
