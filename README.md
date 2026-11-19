@@ -28,6 +28,37 @@
 
 **Working end-to-end example** (Connect + Forge Remote + Containers in one repo): **[`examples/atlassian-connect-forge-spring-boot-sample`](examples/atlassian-connect-forge-spring-boot-sample/)** — see its [README](examples/atlassian-connect-forge-spring-boot-sample/README.md) for install/run.
 
+## Table of contents
+
+- [Authentication vs. authorization, and `@SystemCallOnly`](#authentication-vs-authorization-and-systemcallonly)
+  - [Same model as Atlassian Connect](#same-model-as-atlassian-connect)
+  - [`@SystemCallOnly`](#systemcallonly)
+  - [System token validation (hybrid)](#system-token-validation-hybrid)
+  - [Programmatic use](#programmatic-use)
+- [Migration: Connect → Forge Remote](#migration-connect--forge-remote)
+- [Migration: Forge Remote → Forge Containers](#migration-forge-remote--forge-containers)
+- [Modules](#modules)
+- [Maven coordinates](#maven-coordinates)
+- [Library reference](#library-reference)
+  - [Enabling the bridge in your Spring Boot app (hybrid / Forge Remote)](#enabling-the-bridge-in-your-spring-boot-app-hybrid--forge-remote)
+  - [Calling Jira, Confluence, or generic product REST](#calling-jira-confluence-or-generic-product-rest)
+  - [Security bridge and manual authorization](#security-bridge-and-manual-authorization)
+  - [Host enrichment from Forge context](#host-enrichment-from-forge-context)
+  - [Extending `AtlassianHost` with your own fields](#extending-atlassianhost-with-your-own-fields)
+  - [Connect host persistence (JPA)](#connect-host-persistence-jpa)
+  - [Forge Containers (`bridge-connect-container`)](#forge-containers-bridge-connect-container)
+- [Build](#build)
+
+**Examples** (all under [`examples/atlassian-connect-forge-spring-boot-sample`](examples/atlassian-connect-forge-spring-boot-sample/)):
+
+| Example | What it shows |
+|---------|---------------|
+| [`forge-connect/`](examples/atlassian-connect-forge-spring-boot-sample/forge-connect/) | Classic Connect iframe add-on ([manifest](examples/atlassian-connect-forge-spring-boot-sample/forge-connect/manifest.yml)) |
+| [`forge-remote/`](examples/atlassian-connect-forge-spring-boot-sample/forge-remote/) | Hybrid / Forge Remote ([manifest](examples/atlassian-connect-forge-spring-boot-sample/forge-remote/manifest.yml)) |
+| [`forge-container/`](examples/atlassian-connect-forge-spring-boot-sample/forge-container/) | Forge Containers ([README](examples/atlassian-connect-forge-spring-boot-sample/forge-container/README.md), [manifest](examples/atlassian-connect-forge-spring-boot-sample/forge-container/manifest.yml), [`application.yaml`](examples/atlassian-connect-forge-spring-boot-sample/forge-container/src/main/resources/application.yaml)) |
+| [`frontend/`](examples/atlassian-connect-forge-spring-boot-sample/frontend/) | Shared frontend, two builds ([`package.json`](examples/atlassian-connect-forge-spring-boot-sample/frontend/package.json)) |
+| [`core/`](examples/atlassian-connect-forge-spring-boot-sample/core/) | Shared application code |
+
 Do **not** put `bridge-forge-connect` and `bridge-connect-container` on the same classpath.
 
 Built against **Atlassian Connect Spring Boot 6.x** and **Spring Boot 3.5.x** (root `pom.xml`).
@@ -93,13 +124,11 @@ Handlers without the annotation behave exactly as before. A request that fails a
 
 ### System token validation (hybrid)
 
-The token is an Atlassian OAuth access token (RS256 JWT). `ForgeSystemTokenPolicy` verifies:
+The token is an Atlassian OAuth access token (RS256 JWT). This is an **additional** check on top of the standard Connect Spring invocation-token validation, which only reads `exp` of this token. `ForgeSystemTokenPolicy` verifies:
 
 - the RS256 signature against the Atlassian JWKS and `iss` (`https://auth.atlassian.com`);
-- `exp` is present and not passed (clock skew from `app.clockTolerance`, default 60 s);
+- `exp` is present and not passed (clock skew allowed via `app.clockTolerance`, default 0 s, i.e. no tolerance; set it to a few seconds if your server clock drifts from Atlassian's);
 - **installation binding:** `aud` contains the `installationId` of the invocation token (which Connect Spring has already verified), so the token belongs to this app installation.
-
-The Connect Spring library itself only reads `exp` of this token, so these are the only signature, issuer and installation checks it gets.
 
 > **Atlassian does not document how to validate this token**, so these checks are not an official contract and **can be disabled**. Atlassian treats OAuth tokens and their claims as opaque and does not publish their shape; the issuer, the JWKS location and the installation ARI in `aud` come from the shape observed on real Forge system tokens and are not guaranteed. If Atlassian changes the token contents, valid system tokens could be rejected (HTTP 403 on every endpoint, because a present system token is always validated). If that is a risk for you, turn off the checks that rely on the unpublished shape with the properties below; `exp` is the only check that does not depend on it.
 

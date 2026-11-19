@@ -44,7 +44,7 @@ import org.springframework.util.StringUtils;
  *
  * <ul>
  *   <li>always: the token is a JWT with an {@code exp} that has not passed (clock skew from {@code
- *       app.clockTolerance}, default 60s);
+ *       app.clockTolerance}, default 0);
  *   <li>signature: RS256 against the JWKS, {@code bridge.forge.system-token.jwks-url} (default
  *       {@value #DEFAULT_JWKS_URL}; empty disables);
  *   <li>issuer: {@code bridge.forge.system-token.issuer} (default {@value #DEFAULT_ISSUER}; empty
@@ -73,7 +73,7 @@ public class ForgeSystemTokenPolicy implements SystemTokenPolicy {
       @Value("${bridge.forge.system-token.jwks-url:" + DEFAULT_JWKS_URL + "}") String jwksUrl,
       @Value("${bridge.forge.system-token.issuer:" + DEFAULT_ISSUER + "}") String issuer,
       @Value("${bridge.forge.system-token.bind-installation:true}") boolean bindInstallation,
-      @Value("${app.clockTolerance:60}") int clockToleranceSeconds)
+      @Value("${app.clockTolerance:0}") int clockToleranceSeconds)
       throws MalformedURLException {
     this(
         StringUtils.hasText(jwksUrl)
